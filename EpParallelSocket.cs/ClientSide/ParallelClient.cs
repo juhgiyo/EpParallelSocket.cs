@@ -44,6 +44,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using EpServerEngine.cs;
 using EpLibrary.cs;
+using System.Diagnostics;
 
 namespace EpParallelSocket.cs
 {
@@ -65,6 +66,11 @@ namespace EpParallelSocket.cs
         /// general lock
         /// </summary>
         private Object m_generalLock = new Object();
+
+        /// <summary>
+        /// receive lock
+        /// </summary>
+        private Object m_receiveLock = new Object();
 
         /// <summary>
         /// Packet Sequence
@@ -128,11 +134,11 @@ namespace EpParallelSocket.cs
         private bool m_isConnected = false;
 
 
-        private Queue<Packet> m_packetQueue= new Queue<Packet>();
+        private Queue<Packet> m_packetQueue = new Queue<Packet>();
         private HashSet<Packet> m_pendingPacketSet = new HashSet<Packet>();
         private HashSet<Packet> m_errorPacketSet = new HashSet<Packet>();
-        
-        private PQueue<Packet> m_receiveQueue = new PQueue<Packet>();
+
+        private PQueue<ParallelPacket> m_receivedQueue = new PQueue<ParallelPacket>();
 
         /// <summary>
         /// Default constructor
@@ -393,17 +399,19 @@ namespace EpParallelSocket.cs
         /// Send given packet to the server
         /// </summary>
         /// <param name="data">bytes of data</param>
+        /// <param name="offset">offset in byte</param>
         /// <param name="dataSize">data size</param>
         public void Send(byte[] data, int offset, int dataSize)
         {
+            Debug.Assert(data != null);
+            Debug.Assert(data.Count() >= offset + dataSize);
             byte[] packet = new byte[sizeof(long) + sizeof(int) + dataSize];
             MemoryStream mStream = new MemoryStream(packet);
             mStream.Write(BitConverter.GetBytes(getCurPacketSequence()), 0, 8);
             mStream.Write(BitConverter.GetBytes((int)ParallelPacketType.DATA), 0, 4);
-            mStream.Write(data,offset,dataSize);
-            Packet sendPacket = new Packet(packet, packet.Count(), false);
+            mStream.Write(data, offset, dataSize);
             lock(m_generalLock){
-                m_packetQueue.Enqueue(sendPacket);
+                m_packetQueue.Enqueue(new Packet(packet,packet.Count(),false));
             }
         }
 
@@ -430,6 +438,7 @@ namespace EpParallelSocket.cs
             
         }
 
+        long m_curReceivedPacketId = -1;
         /// <summary>
         /// Receive callback
         /// </summary>
@@ -437,12 +446,23 @@ namespace EpParallelSocket.cs
         /// <param name="receivedPacket">received packet</param>
         public void OnReceived(INetworkClient client, Packet receivedPacket)
         {
+            ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
             switch (m_receiveType)
             {
                 case ReceiveType.BURST:
                     // TODO: callback on receive
                     break;
                 case ReceiveType.SEQUENTIAL:
+                    lock (m_receiveLock)
+                    {
+                        m_receivedQueue.Enqueue(receivedParallelPacket);
+                        while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                        {
+                            ParallelPacket curPacket = m_receivedQueue.Dequeue();
+                            m_curReceivedPacketId =curPacket.GetPacketID();
+                            // TODO: callback on receive
+                        }
+                    }
                     break;
             }
         }

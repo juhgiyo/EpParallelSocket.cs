@@ -41,15 +41,16 @@
   <ItemGroup>
     <Compile Include="ClientSide\ParallelClient.cs" />
     <Compile Include="ClientSide\ParallelClientInterface.cs" />
+    <Compile Include="General\ParallelPacket.cs" />
     <Compile Include="General\ParallelSocketConf.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\OpenSource\GitHub\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">
+    <ProjectReference Include="..\..\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">
       <Project>{166162df-96c8-4034-ae61-e25b2380dd9a}</Project>
       <Name>EpLibrary.cs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\OpenSource\GitHub\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj">
+    <ProjectReference Include="..\..\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj">
       <Project>{63739890-8c4a-43a9-a33e-e6172498ef0f}</Project>
       <Name>EpServerEngine.cs</Name>
     </ProjectReference>

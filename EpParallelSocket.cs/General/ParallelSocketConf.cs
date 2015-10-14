@@ -6,6 +6,29 @@ using System.Threading.Tasks;
 
 namespace EpParallelSocket.cs
 {
+    public enum ReceiveType
+    {
+        /// <summary>
+        /// Receive data as it comes
+        /// </summary>
+        BURST=0,
+        /// <summary>
+        /// Receive data in sequence
+        /// </summary>
+        SEQUENTIAL
+    }
+
+    public enum ParallelPacketType
+    {
+        /// <summary>
+        /// Identity type
+        /// </summary>
+        IDENTITY=0,
+        /// <summary>
+        /// Data type
+        /// </summary>
+        DATA
+    }
     /// <summary>
     /// Server configuration class
     /// </summary>

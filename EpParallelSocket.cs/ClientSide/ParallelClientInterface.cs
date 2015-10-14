@@ -62,6 +62,12 @@ namespace EpParallelSocket.cs
         /// port
         /// </summary>
         public String port;
+
+        /// <summary>
+        /// receive type
+        /// </summary>
+        public ReceiveType receiveType;
+
         /// <summary>
         /// number of sockets to use
         /// </summary>
@@ -83,6 +89,7 @@ namespace EpParallelSocket.cs
             callBackObj = null;
             hostName = ParallelSocketConf.DEFAULT_HOSTNAME;
             port = ParallelSocketConf.DEFAULT_PORT;
+            receiveType = ReceiveType.SEQUENTIAL;
             socketCount = ParallelSocketConf.DEFAULT_SOCKET_NUM;
             noDelay = true;
             waitTimeInMilliSec = Timeout.Infinite;
@@ -95,11 +102,12 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="noDelay">flag for no delay</param>
         /// <param name="waitTimeInMilliSec">wait time in millisecond</param>
-        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, int socketCount = ParallelSocketConf.DEFAULT_SOCKET_NUM, bool noDelay = true, int waitTimeInMilliSec = Timeout.Infinite)
+        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, ReceiveType receiveType=ReceiveType.SEQUENTIAL, int socketCount = ParallelSocketConf.DEFAULT_SOCKET_NUM, bool noDelay = true, int waitTimeInMilliSec = Timeout.Infinite)
         {
             this.callBackObj = callBackObj;
             this.hostName = hostName;
             this.port = port;
+            this.receiveType = receiveType;
             this.socketCount = socketCount;
             this.noDelay = noDelay;
             this.waitTimeInMilliSec = waitTimeInMilliSec;
@@ -179,7 +187,8 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="status">send status</param>
-        void OnSent(IParallelClient client, SendStatus status);
+        /// <param name="sentPacket">sent packet</param>
+        void OnSent(IParallelClient client, SendStatus status, Packet sentPacket);
 
         /// <summary>
         /// Disconnect callback

@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace EpParallelSocket.cs
 {
+    /// <summary>
+    /// Receive type
+    /// </summary>
     public enum ReceiveType
     {
         /// <summary>
@@ -18,6 +21,9 @@ namespace EpParallelSocket.cs
         SEQUENTIAL
     }
 
+    /// <summary>
+    /// Parallel packet type
+    /// </summary>
     public enum ParallelPacketType
     {
         /// <summary>

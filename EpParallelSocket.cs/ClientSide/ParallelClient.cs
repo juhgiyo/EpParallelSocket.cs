@@ -48,6 +48,9 @@ using System.Diagnostics;
 
 namespace EpParallelSocket.cs
 {
+    /// <summary>
+    /// A Parallel Client class.
+    /// </summary>
     public sealed class ParallelClient : ThreadEx, IParallelClient, INetworkClientCallback
     {
         /// <summary>
@@ -60,7 +63,13 @@ namespace EpParallelSocket.cs
         /// </summary>
         private Guid m_guid;
 
+        /// <summary>
+        /// sub client sets
+        /// </summary>
         private HashSet<INetworkClient> m_clientSet = new HashSet<INetworkClient>();
+        /// <summary>
+        /// pending client sets
+        /// </summary>
         private HashSet<INetworkClient> m_pendingClientSet = new HashSet<INetworkClient>();
         /// <summary>
         /// general lock
@@ -71,6 +80,11 @@ namespace EpParallelSocket.cs
         /// receive lock
         /// </summary>
         private Object m_receiveLock = new Object();
+
+        /// <summary>
+        /// send lock
+        /// </summary>
+        private Object m_sendLock = new Object();
 
         /// <summary>
         /// Packet Sequence
@@ -105,6 +119,10 @@ namespace EpParallelSocket.cs
         /// </summary>
         private int m_curSocketCount;
 
+        /// <summary>
+        /// Last received packet ID
+        /// </summary>
+        private long m_curReceivedPacketId = -1;
 
 
         /// <summary>
@@ -119,13 +137,29 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// flag for connection check
         /// </summary>
-        private bool m_isConnected = false;
+        private volatile bool m_isConnected = false;
 
+        /// <summary>
+        /// send ready event
+        /// </summary>
+        private EventEx m_sendReadyEvent = new EventEx(false, EventResetMode.ManualReset);
 
+        /// <summary>
+        /// packet queue
+        /// </summary>
         private Queue<ParallelPacket> m_packetQueue = new Queue<ParallelPacket>();
+        /// <summary>
+        /// pending packet set
+        /// </summary>
         private HashSet<ParallelPacket> m_pendingPacketSet = new HashSet<ParallelPacket>();
+        /// <summary>
+        /// error packet set
+        /// </summary>
         private HashSet<ParallelPacket> m_errorPacketSet = new HashSet<ParallelPacket>();
 
+        /// <summary>
+        /// received packet queue
+        /// </summary>
         private PQueue<ParallelPacket> m_receivedQueue = new PQueue<ParallelPacket>();
 
         /// <summary>
@@ -191,6 +225,9 @@ namespace EpParallelSocket.cs
                 }
             }
         }
+        /// <summary>
+        /// receive type
+        /// </summary>
         public ReceiveType ReceiveType
         {
             get
@@ -307,13 +344,24 @@ namespace EpParallelSocket.cs
 
                     m_curPacketSequence = 0;
                     m_curSocketCount = 0;
-                    
-                    m_clientSet.Clear();
-                    m_pendingClientSet.Clear();
 
-                    m_packetQueue.Clear();
-                    m_pendingPacketSet.Clear();
-                    m_errorPacketSet.Clear();
+                    m_clientSet.Clear();
+                    lock (m_sendLock)
+                    {
+                        m_pendingClientSet.Clear();
+
+                        m_packetQueue.Clear();
+                        m_pendingPacketSet.Clear();
+                        m_errorPacketSet.Clear();
+                    }
+                    lock (m_receiveLock)
+                    {
+                        m_curReceivedPacketId = -1;
+                        m_receivedQueue.Clear();
+                    }
+                    
+                    
+                    m_sendReadyEvent.ResetEvent();
 
                     if (m_hostName == null || m_hostName.Length == 0)
                     {
@@ -332,6 +380,19 @@ namespace EpParallelSocket.cs
                     }
                     m_isConnected = true;
                 }
+            }
+            catch (CallbackException)
+            {
+                if (m_callBackObj != null)
+                {
+                    Thread t = new Thread(delegate()
+                    {
+                        m_callBackObj.OnConnected(this, status);
+                    });
+                    t.Start();
+
+                }
+                return;
             }
             catch (Exception ex)
             {
@@ -354,9 +415,9 @@ namespace EpParallelSocket.cs
         /// </summary>
         private void startSend()
         {
-            while (m_isConnected)
+            while (IsConnectionAlive())
             {
-                lock (m_generalLock)
+                lock (m_sendLock)
                 {
                     while (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
                     {
@@ -381,7 +442,7 @@ namespace EpParallelSocket.cs
                         }
                     }
                 }
-                Thread.Sleep(0);
+                m_sendReadyEvent.WaitForEvent();
             }
         }
         /// <summary>
@@ -391,13 +452,12 @@ namespace EpParallelSocket.cs
         public void Connect(ParallelClientOps ops)
         {
             
-            lock (m_generalLock)
+
+            if (IsConnectionAlive())
             {
-                if (IsConnectionAlive())
-                {
-                    return;
-                }
+                return;
             }
+
             if (ops == null)
                 ops = ParallelClientOps.defaultClientOps;
             if (ops.CallBackObj == null)
@@ -414,6 +474,14 @@ namespace EpParallelSocket.cs
         /// </summary>
         public void Disconnect()
         {
+            lock (m_generalLock)
+            {
+                List<INetworkClient> clientList=new List<INetworkClient>(m_clientSet);
+                foreach (INetworkClient client in clientList)
+                {
+                    client.Disconnect();
+                }
+            }
         }
 
         /// <summary>
@@ -454,8 +522,11 @@ namespace EpParallelSocket.cs
         /// <param name="dataSize">data size</param>
         public void Send(byte[] data, int offset, int dataSize)
         {
-            lock(m_generalLock){
+            lock (m_sendLock)
+            {
                 m_packetQueue.Enqueue(new ParallelPacket(getCurPacketSequence(), ParallelPacketType.DATA, data, offset, dataSize));
+                if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                    m_sendReadyEvent.SetEvent();
             }
         }
 
@@ -484,14 +555,21 @@ namespace EpParallelSocket.cs
                     m_curSocketCount++;
                     if (m_curSocketCount == 1)
                     {
-                        // TODO: callback on connected
+                        if (m_callBackObj != null)
+                        {
+                            Thread t = new Thread(delegate()
+                            {
+                                m_callBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
+                            });
+                            t.Start();
+                            //m_callBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
+                        }
                     }
                 }
             }
             
         }
 
-        long m_curReceivedPacketId = -1;
         /// <summary>
         /// Receive callback
         /// </summary>
@@ -500,23 +578,34 @@ namespace EpParallelSocket.cs
         public void OnReceived(INetworkClient client, Packet receivedPacket)
         {
             ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
-            switch (m_receiveType)
+            if (m_receiveType==ReceiveType.BURST)
             {
-                case ReceiveType.BURST:
-                    // TODO: callback on receive
-                    break;
-                case ReceiveType.SEQUENTIAL:
+                    Thread t = new Thread(delegate()
+                    {
+                        m_callBackObj.OnReceived(this, receivedParallelPacket);
+                    });
+                    //m_callBackObj.OnReceived(this, receivedParallelPacket);
+            }
+            else if(m_receiveType==ReceiveType.SEQUENTIAL)
+            {
                     lock (m_receiveLock)
                     {
                         m_receivedQueue.Enqueue(receivedParallelPacket);
                         while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
                         {
                             ParallelPacket curPacket = m_receivedQueue.Dequeue();
-                            m_curReceivedPacketId =curPacket.GetPacketID();
-                            // TODO: callback on receive
+                            m_curReceivedPacketId =curPacket.GetPacketID();                            
+                            if (m_callBackObj != null)
+                            {
+                                Thread t = new Thread(delegate()
+                                {
+                                    m_callBackObj.OnReceived(this, receivedParallelPacket);
+                                });
+                                t.Start();
+                                //m_callBackObj.OnReceived(this, receivedParallelPacket);
+                            }
                         }
                     }
-                    break;
             }
         }
 
@@ -527,9 +616,9 @@ namespace EpParallelSocket.cs
         /// <param name="status">send status</param>
         public void OnSent(INetworkClient client, SendStatus status, Packet sentPacket)
         {
-            lock (m_generalLock)
+            ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
+            lock (m_sendLock)
             {
-                ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
                 m_pendingPacketSet.Remove(sentParallelPacket);
                 if (status == SendStatus.SUCCESS || status == SendStatus.FAIL_INVALID_PACKET)
                 {
@@ -539,8 +628,18 @@ namespace EpParallelSocket.cs
                 {
                     m_errorPacketSet.Add(sentParallelPacket);
                 }
-                // TODO: Sent callback
+                if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                    m_sendReadyEvent.SetEvent();
             }
+            if (m_callBackObj != null)
+            {
+                Thread t = new Thread(delegate()
+                {
+                    m_callBackObj.OnSent(this, status, sentParallelPacket);
+                });
+                t.Start();
+                //m_callBackObj.OnSent(this, status, sentParallelPacket);
+            }           
             
         }
 
@@ -553,11 +652,34 @@ namespace EpParallelSocket.cs
             lock (m_generalLock)
             {
                 m_clientSet.Remove(client);
-                m_pendingClientSet.Remove(client);
+                lock (m_sendLock)
+                {
+                    m_pendingClientSet.Remove(client);
+                }
+                
                 m_curSocketCount--;
                 if (m_curSocketCount <= 0)
                 {
-                    // TODO: Disconnect callback
+                    lock (m_sendLock)
+                    {
+                        m_packetQueue.Clear();
+                        m_pendingPacketSet.Clear();
+                        m_errorPacketSet.Clear();
+                    }
+                    lock (m_receiveLock)
+                    {
+                        m_receivedQueue.Clear();
+                    }
+                    m_sendReadyEvent.SetEvent();
+                    m_isConnected = false;
+                    if (m_callBackObj != null)
+                    {
+                        Thread t = new Thread(delegate()
+                        {
+                            m_callBackObj.OnDisconnect(this);
+                        });
+                        t.Start();
+                    }
                 }
             }
         }

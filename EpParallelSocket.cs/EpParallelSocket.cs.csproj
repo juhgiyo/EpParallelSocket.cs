@@ -44,6 +44,9 @@
     <Compile Include="General\ParallelPacket.cs" />
     <Compile Include="General\ParallelSocketConf.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerSide\ParallelServer.cs" />
+    <Compile Include="ServerSide\ParallelServerInterface.cs" />
+    <Compile Include="ServerSide\ParallelSocket.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">

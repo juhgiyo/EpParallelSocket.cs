@@ -10,13 +10,27 @@ using EpServerEngine.cs;
 
 namespace EpParallelSocket.cs
 {
-
-    public class ParallelPacket : IComparable<ParallelPacket>, IEquatable<ParallelPacket>
+    /// <summary>
+    /// Parallel Packet class
+    /// </summary>
+    public sealed class ParallelPacket : IComparable<ParallelPacket>, IEquatable<ParallelPacket>
     {
+        /// <summary>
+        /// packet
+        /// </summary>
         private byte[] m_packet=null;
 
+        /// <summary>
+        /// packet Id
+        /// </summary>
         private long m_packetId;
+        /// <summary>
+        /// packet type
+        /// </summary>
         private ParallelPacketType m_packetType;
+        /// <summary>
+        /// parallel packet header size
+        /// </summary>
         private const int HEADER_SIZE = 12;
 
         /// <summary>
@@ -100,6 +114,10 @@ namespace EpParallelSocket.cs
             return 1;
         }
 
+        /// <summary>
+        /// Return the packet id
+        /// </summary>
+        /// <returns>the packet id</returns>
         public long GetPacketID()
         {
             return m_packetId;

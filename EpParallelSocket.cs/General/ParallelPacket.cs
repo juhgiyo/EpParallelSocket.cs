@@ -13,7 +13,7 @@ namespace EpParallelSocket.cs
 
     public class ParallelPacket : IComparable<ParallelPacket>, IEquatable<ParallelPacket>
     {
-        private byte[] m_packet;
+        private byte[] m_packet=null;
 
         private long m_packetId;
         private ParallelPacketType m_packetType;
@@ -22,16 +22,57 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Default constructor
         /// </summary>
-        /// <param name="sequence">sequence of packet Id</param>
+        /// <param name="packetId">packet Id</param>
         /// <param name="packetType">packet Type</param>
-        /// <param name="packet">packet</param>
+        /// <param name="data">data</param>
+        public ParallelPacket(long packetId, ParallelPacketType packetType, byte[] data)
+        {
+            m_packetId = packetId;
+            m_packetType = packetType;
+
+            m_packet = new byte[sizeof(long) + sizeof(int) + data.Count()];
+            MemoryStream mStream = new MemoryStream(m_packet);
+            mStream.Write(BitConverter.GetBytes(m_packetId), 0, 8);
+            mStream.Write(BitConverter.GetBytes((int)m_packetType), 0, 4);
+            mStream.Write(data, 0, data.Count());
+
+        }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="packetId">packet Id</param>
+        /// <param name="packetType">packet Type</param>
+        /// <param name="data">data</param>
         /// <param name="offset">offset in byte</param>
-        /// <param name="byteSize">packet size in byte</param>
+        /// <param name="dataSize">data size in byte</param>
+        public ParallelPacket(long packetId, ParallelPacketType packetType, byte[] data, int offset, int dataSize)
+        {
+            m_packetId = packetId;
+            m_packetType = packetType;
+
+            m_packet = new byte[sizeof(long) + sizeof(int) + dataSize];
+            MemoryStream mStream = new MemoryStream(m_packet);
+            mStream.Write(BitConverter.GetBytes(m_packetId), 0, 8);
+            mStream.Write(BitConverter.GetBytes((int)m_packetType), 0, 4);
+            mStream.Write(data, offset, dataSize);
+
+        }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="packet">received Packet</param>
         public ParallelPacket(Packet packet)
         {
-            m_packetId = BitConverter.ToInt64(packet.GetPacket(),0);
-            m_packetType = (ParallelPacketType)BitConverter.ToInt32(packet.GetPacket(), 8);
-            m_packet = packet.GetPacket();                        
+            m_packetId = BitConverter.ToInt64(packet.PacketRaw,0);
+            m_packetType = (ParallelPacketType)BitConverter.ToInt32(packet.PacketRaw, 8);
+            m_packet = packet.PacketRaw;
+        }
+
+        public static ParallelPacket FromPacket(Packet packet)
+        {
+            return new ParallelPacket(packet);
         }
 
         /// <summary>

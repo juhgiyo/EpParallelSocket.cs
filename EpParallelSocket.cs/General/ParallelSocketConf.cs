@@ -45,6 +45,6 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Default number of sockets (20)
         /// </summary>
-        public const int DEFAULT_SOCKET_NUM = 20;
+        public const int DEFAULT_MAX_SOCKET_NUM = 20;
     }
 }

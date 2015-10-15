@@ -53,47 +53,76 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// callback object
         /// </summary>
-        public IParallelClientCallback callBackObj;
+        public IParallelClientCallback CallBackObj
+        {
+            get;
+            set;
+        }
         /// <summary>
         /// hostname
         /// </summary>
-        public String hostName;
+        public String HostName
+        {
+            get;
+            set;
+        }
         /// <summary>
         /// port
         /// </summary>
-        public String port;
+        public String Port
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// receive type
         /// </summary>
-        public ReceiveType receiveType;
+        public ReceiveType ReceiveType
+        {
+            get;
+            set;
+        }
 
         /// <summary>
-        /// number of sockets to use
+        /// maximum number of sockets to use
         /// </summary>
-        public int socketCount;
+        public int MaxSocketCount
+        {
+            get;
+            set;
+        }
         /// <summary>
         /// flag for no delay
         /// </summary>
-        public bool noDelay;
+        public bool NoDelay
+        {
+            get;
+            set;
+        }
         /// <summary>
-        /// wait time in millisecond
+        /// connection time out in millisecond
         /// </summary>
-        public int waitTimeInMilliSec;
+        public int ConnectionTimeOut
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Default constructor
         /// </summary>
         public ParallelClientOps()
         {
-            callBackObj = null;
-            hostName = ParallelSocketConf.DEFAULT_HOSTNAME;
-            port = ParallelSocketConf.DEFAULT_PORT;
-            receiveType = ReceiveType.SEQUENTIAL;
-            socketCount = ParallelSocketConf.DEFAULT_SOCKET_NUM;
-            noDelay = true;
-            waitTimeInMilliSec = Timeout.Infinite;
+            CallBackObj = null;
+            HostName = ParallelSocketConf.DEFAULT_HOSTNAME;
+            Port = ParallelSocketConf.DEFAULT_PORT;
+            ReceiveType = ReceiveType.SEQUENTIAL;
+            MaxSocketCount = ParallelSocketConf.DEFAULT_MAX_SOCKET_NUM;
+            NoDelay = true;
+            ConnectionTimeOut = Timeout.Infinite;
         }
+
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -102,15 +131,26 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="noDelay">flag for no delay</param>
         /// <param name="waitTimeInMilliSec">wait time in millisecond</param>
-        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, ReceiveType receiveType=ReceiveType.SEQUENTIAL, int socketCount = ParallelSocketConf.DEFAULT_SOCKET_NUM, bool noDelay = true, int waitTimeInMilliSec = Timeout.Infinite)
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="callBackObj">callback object</param>
+        /// <param name="hostName">hostname</param>
+        /// <param name="port">port</param>
+        /// <param name="receiveType">receive type</param>
+        /// <param name="maxSocketCount">maximum number of sockets to use</param>
+        /// <param name="noDelay">flag for no delay</param>
+        /// <param name="connectionTimeOut">connection wait time in millisecond</param>
+        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int maxSocketCount = ParallelSocketConf.DEFAULT_MAX_SOCKET_NUM, bool noDelay = true, int connectionTimeOut = Timeout.Infinite)
         {
-            this.callBackObj = callBackObj;
-            this.hostName = hostName;
-            this.port = port;
-            this.receiveType = receiveType;
-            this.socketCount = socketCount;
-            this.noDelay = noDelay;
-            this.waitTimeInMilliSec = waitTimeInMilliSec;
+            this.CallBackObj = callBackObj;
+            this.HostName = hostName;
+            this.Port = port;
+            this.ReceiveType = receiveType;
+            this.MaxSocketCount = maxSocketCount;
+            this.NoDelay = noDelay;
+            this.ConnectionTimeOut = connectionTimeOut;
         }
         /// <summary>
         /// default client option
@@ -124,22 +164,64 @@ namespace EpParallelSocket.cs
     public interface IParallelClient
     {
         /// <summary>
-        /// Return the hostname
+        /// callback object
         /// </summary>
-        /// <returns>hostname</returns>
-        String GetHostName();
+        IParallelClientCallback CallBackObj
+        {
+            get;
+        }
+        /// <summary>
+        /// hostname
+        /// </summary>
+        String HostName
+        {
+            get;
+        }
+        /// <summary>
+        /// port
+        /// </summary>
+        String Port
+        {
+            get;
+        }
 
         /// <summary>
-        /// Return the port
+        /// receive type
         /// </summary>
-        /// <returns>port</returns>
-        String GetPort();
+        ReceiveType ReceiveType
+        {
+            get;
+        }
 
         /// <summary>
-        /// Return the number of sockets using
+        /// maximum number of sockets to use
         /// </summary>
-        /// <returns>number of sockets using</returns>
-        int GetSocketCount();
+        int MaxSocketCount
+        {
+            get;
+        }
+
+        /// <summary>
+        /// current number of sockets property
+        /// </summary>
+        int CurSocketCount
+        {
+            get;
+        }
+        /// <summary>
+        /// flag for no delay
+        /// </summary>
+        bool NoDelay
+        {
+            get;
+        }
+        /// <summary>
+        /// connection time out in millisecond
+        /// </summary>
+        int ConnectionTimeOut
+        {
+            get;
+        }
 
         /// <summary>
         /// Connect to server with given option
@@ -162,8 +244,15 @@ namespace EpParallelSocket.cs
         /// Send given packet to the server
         /// </summary>
         /// <param name="data">bytes of data</param>
+        /// <param name="offset">offset from start idx</param>
         /// <param name="dataSize">data size</param>
         void Send(byte[] data, int offset, int dataSize);
+
+        /// <summary>
+        /// Send given packet to the server
+        /// </summary>
+        /// <param name="data">bytes of data</param>
+        void Send(byte[] data);
     }
 
     public interface IParallelClientCallback
@@ -180,7 +269,7 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="receivedPacket">received packet</param>
-        void OnReceived(IParallelClient client, Packet receivedPacket);
+        void OnReceived(IParallelClient client, ParallelPacket receivedPacket);
 
         /// <summary>
         /// Send callback
@@ -188,7 +277,7 @@ namespace EpParallelSocket.cs
         /// <param name="client">client</param>
         /// <param name="status">send status</param>
         /// <param name="sentPacket">sent packet</param>
-        void OnSent(IParallelClient client, SendStatus status, Packet sentPacket);
+        void OnSent(IParallelClient client, SendStatus status, ParallelPacket sentPacket);
 
         /// <summary>
         /// Disconnect callback

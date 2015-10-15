@@ -98,26 +98,14 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// number of sockets using
         /// </summary>
-        private int m_socketCount;
+        private int m_maxSocketCount;
 
         /// <summary>
         /// current number of sockets
         /// </summary>
         private int m_curSocketCount;
 
-        /// <summary>
-        /// current number of sockets property
-        /// </summary>
-        public int CurSocketCount
-        {
-            get
-            {
-                lock(m_generalLock)
-                {
-                    return m_curSocketCount;
-                }
-            }
-        }
+
 
         /// <summary>
         /// flag for nodelay
@@ -126,7 +114,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// wait time in millisecond
         /// </summary>
-        private int m_waitTimeInMilliSec;
+        private int m_connectionTimeOut;
 
         /// <summary>
         /// flag for connection check
@@ -134,9 +122,9 @@ namespace EpParallelSocket.cs
         private bool m_isConnected = false;
 
 
-        private Queue<Packet> m_packetQueue = new Queue<Packet>();
-        private HashSet<Packet> m_pendingPacketSet = new HashSet<Packet>();
-        private HashSet<Packet> m_errorPacketSet = new HashSet<Packet>();
+        private Queue<ParallelPacket> m_packetQueue = new Queue<ParallelPacket>();
+        private HashSet<ParallelPacket> m_pendingPacketSet = new HashSet<ParallelPacket>();
+        private HashSet<ParallelPacket> m_errorPacketSet = new HashSet<ParallelPacket>();
 
         private PQueue<ParallelPacket> m_receivedQueue = new PQueue<ParallelPacket>();
 
@@ -166,45 +154,108 @@ namespace EpParallelSocket.cs
         /// Return the hostname
         /// </summary>
         /// <returns>hostname</returns>
-        public String GetHostName()
+        public String HostName
         {
-            lock (m_generalLock)
+            get
             {
-                return m_hostName;
+                lock (m_generalLock)
+                {
+                    return m_hostName;
+                }
             }
         }
-
         /// <summary>
         /// Return the port
         /// </summary>
         /// <returns>port</returns>
-        public String GetPort()
+        public String Port
         {
-            lock (m_generalLock)
+            get
             {
-                return m_port;
+                lock (m_generalLock)
+                {
+                    return m_port;
+                }
             }
         }
-
-        public ReceiveType GetReceiveType()
+        /// <summary>
+        /// callback object
+        /// </summary>
+        public IParallelClientCallback CallBackObj
         {
-            lock (m_generalLock)
+            get
             {
-                return m_receiveType;
+                lock (m_generalLock)
+                {
+                    return m_callBackObj;
+                }
             }
         }
-
+        public ReceiveType ReceiveType
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_receiveType;
+                }
+            }
+        }
         /// <summary>
         /// Return the number of sockets using
         /// </summary>
         /// <returns>number of sockets using</returns>
-        public int GetSocketCount()
+        public int MaxSocketCount
         {
-            lock (m_generalLock)
+            get
             {
-                return m_socketCount;
+                lock (m_generalLock)
+                {
+                    return m_maxSocketCount;
+                }
             }
         }
+
+        /// <summary>
+        /// current number of sockets property
+        /// </summary>
+        public int CurSocketCount
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_curSocketCount;
+                }
+            }
+        }
+        /// <summary>
+        /// flag for no delay
+        /// </summary>
+        public bool NoDelay
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_noDelay;
+                }
+            }
+        }
+        /// <summary>
+        /// connection time out in millisecond
+        /// </summary>
+        public int ConnectionTimeOut
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_connectionTimeOut;
+                }
+            }
+        }
+
         /// <summary>
         /// Callback Exception class
         /// </summary>
@@ -246,13 +297,13 @@ namespace EpParallelSocket.cs
                     }
 
                     m_guid = Guid.NewGuid();
-                    m_callBackObj = m_clientOps.callBackObj;
-                    m_hostName = m_clientOps.hostName;
-                    m_port = m_clientOps.port;
-                    m_receiveType = m_clientOps.receiveType;
-                    m_socketCount = m_clientOps.socketCount;
-                    m_noDelay = m_clientOps.noDelay;
-                    m_waitTimeInMilliSec = m_clientOps.waitTimeInMilliSec;
+                    m_callBackObj = m_clientOps.CallBackObj;
+                    m_hostName = m_clientOps.HostName;
+                    m_port = m_clientOps.Port;
+                    m_receiveType = m_clientOps.ReceiveType;
+                    m_maxSocketCount = m_clientOps.MaxSocketCount;
+                    m_noDelay = m_clientOps.NoDelay;
+                    m_connectionTimeOut = m_clientOps.ConnectionTimeOut;
 
                     m_curPacketSequence = 0;
                     m_curSocketCount = 0;
@@ -273,8 +324,8 @@ namespace EpParallelSocket.cs
                     {
                         m_port = ServerConf.DEFAULT_PORT;
                     }
-                    ClientOps clientOps = new ClientOps(this, m_hostName, m_port, m_noDelay, m_waitTimeInMilliSec);
-                    for (int i = 0; i < m_socketCount; i++)
+                    ClientOps clientOps = new ClientOps(this, m_hostName, m_port, m_noDelay, m_connectionTimeOut);
+                    for (int i = 0; i < m_maxSocketCount; i++)
                     {
                         INetworkClient client = new IocpTcpClient();
                         client.Connect(clientOps);
@@ -311,21 +362,21 @@ namespace EpParallelSocket.cs
                     {
                         if (m_errorPacketSet.Count > 0)
                         {
-                            Packet sendPacket = m_errorPacketSet.First();
+                            ParallelPacket sendPacket = m_errorPacketSet.First();
                             m_errorPacketSet.Remove(sendPacket);
                             m_pendingPacketSet.Add(sendPacket);
                             INetworkClient client = m_pendingClientSet.First();
                             m_pendingClientSet.Remove(client);
-                            client.Send(sendPacket);
+                            client.Send(sendPacket.GetPacketRaw());
                             continue;
                         }
                         else if (m_packetQueue.Count > 0)
                         {
-                            Packet sendPacket = m_packetQueue.Dequeue();
+                            ParallelPacket sendPacket = m_packetQueue.Dequeue();
                             m_pendingPacketSet.Add(sendPacket);
                             INetworkClient client = m_pendingClientSet.First();
                             m_pendingClientSet.Remove(client);
-                            client.Send(sendPacket);
+                            client.Send(sendPacket.GetPacketRaw());
                             continue;
                         }
                     }
@@ -349,7 +400,7 @@ namespace EpParallelSocket.cs
             }
             if (ops == null)
                 ops = ParallelClientOps.defaultClientOps;
-            if (ops.callBackObj == null)
+            if (ops.CallBackObj == null)
                 throw new NullReferenceException("callBackObj is null!");
             lock (m_generalLock)
             {
@@ -399,20 +450,22 @@ namespace EpParallelSocket.cs
         /// Send given packet to the server
         /// </summary>
         /// <param name="data">bytes of data</param>
-        /// <param name="offset">offset in byte</param>
+        /// <param name="offset">offset from start idx</param>
         /// <param name="dataSize">data size</param>
         public void Send(byte[] data, int offset, int dataSize)
         {
-            Debug.Assert(data != null);
-            Debug.Assert(data.Count() >= offset + dataSize);
-            byte[] packet = new byte[sizeof(long) + sizeof(int) + dataSize];
-            MemoryStream mStream = new MemoryStream(packet);
-            mStream.Write(BitConverter.GetBytes(getCurPacketSequence()), 0, 8);
-            mStream.Write(BitConverter.GetBytes((int)ParallelPacketType.DATA), 0, 4);
-            mStream.Write(data, offset, dataSize);
             lock(m_generalLock){
-                m_packetQueue.Enqueue(new Packet(packet,packet.Count(),false));
+                m_packetQueue.Enqueue(new ParallelPacket(getCurPacketSequence(), ParallelPacketType.DATA, data, offset, dataSize));
             }
+        }
+
+        /// <summary>
+        /// Send given packet to the server
+        /// </summary>
+        /// <param name="data">bytes of data</param>
+        public void Send(byte[] data)
+        {
+            Send(data, 0, data.Count());
         }
 
 
@@ -476,14 +529,15 @@ namespace EpParallelSocket.cs
         {
             lock (m_generalLock)
             {
-                m_pendingPacketSet.Remove(sentPacket);
+                ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
+                m_pendingPacketSet.Remove(sentParallelPacket);
                 if (status == SendStatus.SUCCESS || status == SendStatus.FAIL_INVALID_PACKET)
                 {
                     m_pendingClientSet.Add(client);
                 }
                 if (status != SendStatus.SUCCESS)
                 {
-                    m_errorPacketSet.Add(sentPacket);
+                    m_errorPacketSet.Add(sentParallelPacket);
                 }
                 // TODO: Sent callback
             }

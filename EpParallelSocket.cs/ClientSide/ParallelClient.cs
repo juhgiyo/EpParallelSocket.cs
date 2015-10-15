@@ -401,19 +401,19 @@ namespace EpParallelSocket.cs
             ConnectStatus status = ConnectStatus.SUCCESS;
             try
             {
-
-                if (IsConnectionAlive)
-                {
-                    status = ConnectStatus.FAIL_ALREADY_CONNECTED;
-                    throw new CallbackException();
-                }
-
-                Guid = Guid.NewGuid();
-                
-                CurSocketCount = 0;
-
                 lock (m_generalLock)
                 {
+                    if (IsConnectionAlive)
+                    {
+                        status = ConnectStatus.FAIL_ALREADY_CONNECTED;
+                        throw new CallbackException();
+                    }
+
+                    Guid = Guid.NewGuid();
+
+                    CurSocketCount = 0;
+
+
                     CallBackObj = m_clientOps.CallBackObj;
                     HostName = m_clientOps.HostName;
                     Port = m_clientOps.Port;
@@ -424,41 +424,41 @@ namespace EpParallelSocket.cs
 
                     m_curPacketSequence = 0;
                     m_clientSet.Clear();
-                }
-                lock (m_sendLock)
-                {
-                    m_pendingClientSet.Clear();
 
-                    m_packetQueue.Clear();
-                    m_pendingPacketSet.Clear();
-                    m_errorPacketSet.Clear();
-                }
-                lock (m_receiveLock)
-                {
-                    m_curReceivedPacketId = -1;
-                    m_receivedQueue.Clear();
-                }
-                    
-                    
-                m_sendReadyEvent.ResetEvent();
+                    lock (m_sendLock)
+                    {
+                        m_pendingClientSet.Clear();
 
-                if (HostName == null || HostName.Length == 0)
-                {
-                    HostName = ServerConf.DEFAULT_HOSTNAME;
-                }
+                        m_packetQueue.Clear();
+                        m_pendingPacketSet.Clear();
+                        m_errorPacketSet.Clear();
+                    }
+                    lock (m_receiveLock)
+                    {
+                        m_curReceivedPacketId = -1;
+                        m_receivedQueue.Clear();
+                    }
 
-                if (Port == null || Port.Length == 0)
-                {
-                    Port = ServerConf.DEFAULT_PORT;
-                }
-                ClientOps clientOps = new ClientOps(this, HostName, Port, NoDelay, ConnectionTimeOut);
-                for (int i = 0; i < MaxSocketCount; i++)
-                {
-                    INetworkClient client = new IocpTcpClient();
-                    client.Connect(clientOps);
-                }
-                IsConnectionAlive = true;
 
+                    m_sendReadyEvent.ResetEvent();
+
+                    if (HostName == null || HostName.Length == 0)
+                    {
+                        HostName = ServerConf.DEFAULT_HOSTNAME;
+                    }
+
+                    if (Port == null || Port.Length == 0)
+                    {
+                        Port = ServerConf.DEFAULT_PORT;
+                    }
+                    ClientOps clientOps = new ClientOps(this, HostName, Port, NoDelay, ConnectionTimeOut);
+                    for (int i = 0; i < MaxSocketCount; i++)
+                    {
+                        INetworkClient client = new IocpTcpClient();
+                        client.Connect(clientOps);
+                    }
+                    IsConnectionAlive = true;
+                }
             }
             catch (CallbackException)
             {
@@ -745,37 +745,37 @@ namespace EpParallelSocket.cs
             lock (m_generalLock)
             {
                 m_clientSet.Remove(client);
-            }
-            lock (m_sendLock)
-            {
-                m_pendingClientSet.Remove(client);
-            }
 
-            CurSocketCount--;
-            if (CurSocketCount <= 0)
-            {
                 lock (m_sendLock)
                 {
-                    m_packetQueue.Clear();
-                    m_pendingPacketSet.Clear();
-                    m_errorPacketSet.Clear();
+                    m_pendingClientSet.Remove(client);
                 }
-                lock (m_receiveLock)
+
+                CurSocketCount--;
+                if (CurSocketCount <= 0)
                 {
-                    m_receivedQueue.Clear();
-                }
-                m_sendReadyEvent.SetEvent();
-                IsConnectionAlive = false;
-                if (CallBackObj != null)
-                {
-                    Thread t = new Thread(delegate()
+                    lock (m_sendLock)
                     {
-                        CallBackObj.OnDisconnect(this);
-                    });
-                    t.Start();
+                        m_packetQueue.Clear();
+                        m_pendingPacketSet.Clear();
+                        m_errorPacketSet.Clear();
+                    }
+                    lock (m_receiveLock)
+                    {
+                        m_receivedQueue.Clear();
+                    }
+                    m_sendReadyEvent.SetEvent();
+                    IsConnectionAlive = false;
+                    if (CallBackObj != null)
+                    {
+                        Thread t = new Thread(delegate()
+                        {
+                            CallBackObj.OnDisconnect(this);
+                        });
+                        t.Start();
+                    }
                 }
             }
-
         }
     }
 }

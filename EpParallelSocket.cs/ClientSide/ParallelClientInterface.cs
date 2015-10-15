@@ -222,6 +222,13 @@ namespace EpParallelSocket.cs
         {
             get;
         }
+        /// <summary>
+        /// GUID of Parallel Client
+        /// </summary>
+        Guid Guid
+        {
+            get;
+        }
 
         /// <summary>
         /// Connect to server with given option
@@ -238,7 +245,10 @@ namespace EpParallelSocket.cs
         /// Check if the connection is alive
         /// </summary>
         /// <returns></returns>
-        bool IsConnectionAlive();
+        bool IsConnectionAlive
+        {
+            get;
+        }
 
         /// <summary>
         /// Send given packet to the server

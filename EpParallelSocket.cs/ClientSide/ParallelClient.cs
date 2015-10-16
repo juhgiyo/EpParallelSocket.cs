@@ -3,14 +3,14 @@
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
 		<http://github.com/juhgiyo/epparallelclient.cs>
 @date October 13, 2015
-@brief ParallelClient Interface
+@brief Parallel Client Interface
 @version 2.0
 
 @section LICENSE
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Woong Gyu La <juhgiyo@gmail.com>
+Copyright (c) 2015 Woong Gyu La <juhgiyo@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -3,7 +3,7 @@
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
 		<http://github.com/juhgiyo/epparallelclient.cs>
 @date October 13, 2015
-@brief ParallelClientInterface Interface
+@brief Parallel Client Interface
 @version 2.0
 
 @section LICENSE
@@ -122,15 +122,6 @@ namespace EpParallelSocket.cs
             NoDelay = true;
             ConnectionTimeOut = Timeout.Infinite;
         }
-
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        /// <param name="callBackObj">callback object</param>
-        /// <param name="hostName">hostname</param>
-        /// <param name="port">port</param>
-        /// <param name="noDelay">flag for no delay</param>
-        /// <param name="waitTimeInMilliSec">wait time in millisecond</param>
 
         /// <summary>
         /// Default constructor

@@ -464,7 +464,7 @@ namespace EpParallelSocket.cs
             {
                 if (CallBackObj != null)
                 {
-                    Thread t = new Thread(delegate()
+                    Task t = new Task(delegate()
                     {
                         CallBackObj.OnConnected(this, status);
                     });
@@ -478,7 +478,7 @@ namespace EpParallelSocket.cs
                 Console.WriteLine(ex.Message + " >" + ex.StackTrace);
                 if (CallBackObj != null)
                 {
-                    Thread t = new Thread(delegate()
+                    Task t = new Task(delegate()
                     {
                         CallBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
                     });
@@ -647,7 +647,7 @@ namespace EpParallelSocket.cs
                 {
                     if (CallBackObj != null)
                     {
-                        Thread t = new Thread(delegate()
+                        Task t = new Task(delegate()
                         {
                             CallBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
                         });
@@ -690,7 +690,7 @@ namespace EpParallelSocket.cs
                             m_curReceivedPacketId =curPacket.GetPacketID();
                             if (CallBackObj != null)
                             {
-                                Thread t = new Thread(delegate()
+                                Task t = new Task(delegate()
                                 {
                                     CallBackObj.OnReceived(this, receivedParallelPacket);
                                 });
@@ -726,7 +726,7 @@ namespace EpParallelSocket.cs
             }
             if (CallBackObj != null)
             {
-                Thread t = new Thread(delegate()
+                Task t = new Task(delegate()
                 {
                     CallBackObj.OnSent(this, status, sentParallelPacket);
                 });
@@ -768,7 +768,7 @@ namespace EpParallelSocket.cs
                     IsConnectionAlive = false;
                     if (CallBackObj != null)
                     {
-                        Thread t = new Thread(delegate()
+                        Task t = new Task(delegate()
                         {
                             CallBackObj.OnDisconnect(this);
                         });

@@ -42,6 +42,7 @@
     <Compile Include="ClientSide\ParallelClient.cs" />
     <Compile Include="ClientSide\ParallelClientInterface.cs" />
     <Compile Include="General\ParallelPacket.cs" />
+    <Compile Include="General\ParallelPacketStructs.cs" />
     <Compile Include="General\ParallelSocketConf.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSide\ParallelServer.cs" />

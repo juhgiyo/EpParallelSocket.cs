@@ -123,6 +123,14 @@ namespace EpParallelSocket.cs
             return m_packetId;
         }
         /// <summary>
+        /// Return the packet type
+        /// </summary>
+        /// <returns>the packet type</returns>
+        public ParallelPacketType GetPacketType()
+        {
+            return m_packetType;
+        }
+        /// <summary>
         /// Return the size of packet in byte
         /// </summary>
         /// <returns>the size of packet in byte</returns>

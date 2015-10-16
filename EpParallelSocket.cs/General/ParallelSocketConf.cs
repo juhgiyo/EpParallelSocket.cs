@@ -22,20 +22,6 @@ namespace EpParallelSocket.cs
     }
 
     /// <summary>
-    /// Parallel packet type
-    /// </summary>
-    public enum ParallelPacketType
-    {
-        /// <summary>
-        /// Identity type
-        /// </summary>
-        IDENTITY=0,
-        /// <summary>
-        /// Data type
-        /// </summary>
-        DATA
-    }
-    /// <summary>
     /// Server configuration class
     /// </summary>
     public class ParallelSocketConf

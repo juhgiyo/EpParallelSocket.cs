@@ -668,37 +668,53 @@ namespace EpParallelSocket.cs
         public void OnReceived(INetworkClient client, Packet receivedPacket)
         {
             ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
-            if (m_receiveType==ReceiveType.BURST)
+            switch (receivedParallelPacket.GetPacketType())
             {
-                if (CallBackObj != null)
-                {
-                    Thread t = new Thread(delegate()
+                case ParallelPacketType.DATA:
+                    if (m_receiveType == ReceiveType.BURST)
                     {
-                        CallBackObj.OnReceived(this, receivedParallelPacket);
-                    });
-                    //CallBackObj.OnReceived(this, receivedParallelPacket);
-                }
-            }
-            else if(m_receiveType==ReceiveType.SEQUENTIAL)
-            {
-                    lock (m_receiveLock)
-                    {
-                        m_receivedQueue.Enqueue(receivedParallelPacket);
-                        while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                        if (CallBackObj != null)
                         {
-                            ParallelPacket curPacket = m_receivedQueue.Dequeue();
-                            m_curReceivedPacketId =curPacket.GetPacketID();
-                            if (CallBackObj != null)
+                            Task t = new Task(delegate()
                             {
-                                Task t = new Task(delegate()
+                                CallBackObj.OnReceived(this, receivedParallelPacket);
+                            });
+                            t.Start();
+                            //CallBackObj.OnReceived(this, receivedParallelPacket);
+                        }
+                    }
+                    else if (m_receiveType == ReceiveType.SEQUENTIAL)
+                    {
+                        lock (m_receiveLock)
+                        {
+                            m_receivedQueue.Enqueue(receivedParallelPacket);
+                            while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                            {
+                                ParallelPacket curPacket = m_receivedQueue.Dequeue();
+                                m_curReceivedPacketId = curPacket.GetPacketID();
+                                if (CallBackObj != null)
                                 {
-                                    CallBackObj.OnReceived(this, receivedParallelPacket);
-                                });
-                                t.Start();
-                                //m_callBackObj.OnReceived(this, receivedParallelPacket);
+                                    Task t = new Task(delegate()
+                                    {
+                                        CallBackObj.OnReceived(this, receivedParallelPacket);
+                                    });
+                                    t.Start();
+                                    //m_callBackObj.OnReceived(this, receivedParallelPacket);
+                                }
                             }
                         }
                     }
+                    break;
+                case ParallelPacketType.IDENTITY_REQUEST:
+                    ParallelPacket sendPacket=new ParallelPacket(getCurPacketSequence(),ParallelPacketType.IDENTITY_RESPONSE,Guid.ToByteArray());
+                    client.Send(sendPacket.GetPacketRaw());
+                    break;
+                case ParallelPacketType.READY:
+                    lock (m_sendLock)
+                    {
+                        m_pendingClientSet.Add(client);
+                    }
+                    break;
             }
         }
 
@@ -710,30 +726,33 @@ namespace EpParallelSocket.cs
         public void OnSent(INetworkClient client, SendStatus status, Packet sentPacket)
         {
             ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
-            lock (m_sendLock)
+            if (sentParallelPacket.GetPacketType() == ParallelPacketType.DATA)
             {
-                m_pendingPacketSet.Remove(sentParallelPacket);
-                if (status == SendStatus.SUCCESS || status == SendStatus.FAIL_INVALID_PACKET)
+                lock (m_sendLock)
                 {
-                    m_pendingClientSet.Add(client);
+                    m_pendingPacketSet.Remove(sentParallelPacket);
+                    if (status == SendStatus.SUCCESS || status == SendStatus.FAIL_INVALID_PACKET)
+                    {
+                        m_pendingClientSet.Add(client);
+                    }
+                    if (status != SendStatus.SUCCESS)
+                    {
+                        m_errorPacketSet.Add(sentParallelPacket);
+                    }
+                    if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                        m_sendReadyEvent.SetEvent();
                 }
-                if (status != SendStatus.SUCCESS)
+                if (CallBackObj != null)
                 {
-                    m_errorPacketSet.Add(sentParallelPacket);
-                }
-                if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
-                    m_sendReadyEvent.SetEvent();
-            }
-            if (CallBackObj != null)
-            {
-                Task t = new Task(delegate()
-                {
-                    CallBackObj.OnSent(this, status, sentParallelPacket);
-                });
-                t.Start();
-                //CallBackObj.OnSent(this, status, sentParallelPacket);
-            }           
+                    Task t = new Task(delegate()
+                    {
+                        CallBackObj.OnSent(this, status, sentParallelPacket);
+                    });
+                    t.Start();
+                    //CallBackObj.OnSent(this, status, sentParallelPacket);
+                }           
             
+            }
         }
 
         /// <summary>

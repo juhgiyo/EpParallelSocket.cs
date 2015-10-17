@@ -13,7 +13,7 @@ namespace EpParallelSocket.cs
     /// <summary>
     /// Parallel Server
     /// </summary>
-    public sealed class ParallelServer : ThreadEx, IParallelServer
+    public sealed class ParallelServer : ThreadEx, IParallelServer, INetworkServerCallback, INetworkSocketCallback
     {
         /// <summary>
         /// port
@@ -27,7 +27,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// listner
         /// </summary>
-        private TcpListener m_listener = null;
+        private IocpTcpServer m_listener = new IocpTcpServer();
         /// <summary>
         /// server option
         /// </summary>
@@ -69,6 +69,7 @@ namespace EpParallelSocket.cs
         {
             m_port = b.m_port;
             m_serverOps = b.m_serverOps;
+            m_receiveType = b.m_receiveType;
         }
 
         ~ParallelServer()
@@ -192,11 +193,8 @@ namespace EpParallelSocket.cs
                         Port = ServerConf.DEFAULT_PORT;
                     }
                     m_socketMap.Clear();
-
-                    m_listener = new TcpListener(IPAddress.Any, Convert.ToInt32(m_port));
-                    m_listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                    m_listener.Start();
-                    m_listener.BeginAcceptTcpClient(new AsyncCallback(ParallelServer.onAccept), this);
+                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port);
+                    m_listener.StartServer(listenerOps);
                 }
 
             }
@@ -209,73 +207,12 @@ namespace EpParallelSocket.cs
             {
                 Console.WriteLine(ex.Message + " >" + ex.StackTrace);
                 if (m_listener != null)
-                    m_listener.Stop();
+                    m_listener.StopServer();
                 m_listener = null;
                 CallBackObj.OnServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
                 return;
             }
             CallBackObj.OnServerStarted(this, StartStatus.SUCCESS);
-        }
-
-        /// <summary>
-        /// Accept callback function
-        /// </summary>
-        /// <param name="result">result</param>
-        private static void onAccept(IAsyncResult result)
-        {
-            ParallelServer server = result.AsyncState as ParallelServer;
-            TcpClient client = null;
-            try { client = server.m_listener.EndAcceptTcpClient(result); }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + " >" + ex.StackTrace);
-                if (client != null)
-                {
-                    try
-                    {
-                        client.Client.Shutdown(SocketShutdown.Both);
-                        //client.Client.Disconnect(true);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message + " >" + e.StackTrace);
-                    }
-                    client.Close();
-                    client = null;
-                }
-            }
-
-            try { server.m_listener.BeginAcceptTcpClient(new AsyncCallback(ParallelServer.onAccept), server); }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + " >" + ex.StackTrace);
-                if (client != null)
-                    client.Close();
-                server.StopServer();
-                return;
-            }
-
-            if (client != null)
-            {
-                // TODO: Need to map with GUID
-                ParallelSocket socket = new ParallelSocket(client, server);
-                IParallelSocketCallback socketCallbackObj = server.CallBackObj.OnAccept(server, socket.IPInfo);
-                if (socketCallbackObj == null)
-                {
-                    socket.Disconnect();
-                }
-                else
-                {
-                    socket.CallBackObj = socketCallbackObj;
-                    socket.Start();
-                    lock (server.m_listLock)
-                    {
-                        server.m_socketMap.Add(socket);
-                    }
-                }
-            }
-
-
         }
 
         /// <summary>
@@ -304,7 +241,7 @@ namespace EpParallelSocket.cs
                 if (!IsServerStarted)
                     return;
 
-                m_listener.Stop();
+                m_listener.StopServer();
                 m_listener = null;
             }
             ShutdownAllClient();
@@ -323,9 +260,7 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
-                    if (m_listener != null)
-                        return true;
-                    return false;
+                    return m_listener.IsServerStarted;
                 }
             }
         }
@@ -391,12 +326,116 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="clientSocket">the client to detach</param>
         /// <returns></returns>
-        public bool DetachClient(IocpTcpSocket clientSocket)
+        public bool DetachClient(ParallelSocket clientSocket)
         {
             lock (m_listLock)
             {
                 return m_socketMap.Remove(clientSocket.Guid);
             }
+        }
+
+
+        /// <summary>
+        /// Server started callback
+        /// </summary>
+        /// <param name="server">server</param>
+        /// <param name="status">start status</param>
+        public void OnServerStarted(INetworkServer server, StartStatus status)
+        {
+            CallBackObj.OnServerStarted(this, status);
+        }
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="server">server</param>
+        /// <param name="ipInfo">connection info</param>
+        /// <returns>the socket callback interface</returns>
+        public INetworkSocketCallback OnAccept(INetworkServer server, IPInfo ipInfo)
+        {
+            return this;
+        }
+        /// <summary>
+        /// Server stopped callback
+        /// </summary>
+        /// <param name="server">server</param>
+        public void OnServerStopped(INetworkServer server)
+        {
+            CallBackObj.OnServerStopped(this);
+        }
+
+
+        /// <summary>
+        /// NewConnection callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        public void OnNewConnection(INetworkSocket socket)
+        {
+            // Request Identity of new connected socket
+            ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.IDENTITY_REQUEST,null);
+            socket.Send(sendPacket.GetPacketRaw());
+        }
+
+        /// <summary>
+        /// Receive callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        /// <param name="receivedPacket">received packet</param>
+        public void OnReceived(INetworkSocket socket, Packet receivedPacket)
+        {
+            ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
+            switch (receivedParallelPacket.GetPacketType())
+            {
+                case ParallelPacketType.IDENTITY_RESPONSE:
+                    PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(receivedParallelPacket.GetPacketRaw(),receivedParallelPacket.GetHeaderSize(),receivedParallelPacket.GetDataByteSize());
+
+                    Guid guid = serializer.GetPacket().m_guid;
+                    lock (m_listLock)
+                    {
+                        if (m_socketMap.ContainsKey(guid))
+                        {
+                            m_socketMap[guid].AddSocket(socket);
+                        }
+                        else
+                        {
+                            IParallelSocketCallback socketCallback = CallBackObj.OnAccept(this, socket.IPInfo);
+                            if (socketCallback != null)
+                            {
+                                // Create new Parallel Socket
+                                ParallelSocket parallelSocket = new ParallelSocket(socket, this);
+                                parallelSocket.Start();
+                                m_socketMap[guid] = parallelSocket;
+                            }
+                            else
+                            {
+                                // Rejected by server
+                                socket.Disconnect();
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    // Invalid protocol
+                    socket.Disconnect();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Send callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        /// <param name="status">stend status</param>
+        /// <param name="sentPacket">sent packet</param>
+        public void OnSent(INetworkSocket socket, SendStatus status, Packet sentPacket)
+        {
+        }
+
+        /// <summary>
+        /// Disconnect callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        public void OnDisconnect(INetworkSocket socket)
+        {
         }
 
     }

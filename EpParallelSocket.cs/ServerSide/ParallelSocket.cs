@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EpParallelSocket.cs
 {
@@ -13,45 +14,74 @@ namespace EpParallelSocket.cs
     /// <summary>
     /// IOCP TCP Socket class
     /// </summary>
-    public sealed class ParallelSocket : ThreadEx, IParallelSocket
+    public sealed class ParallelSocket : ThreadEx, IParallelSocket, INetworkSocketCallback
     {
+
         /// <summary>
-        /// actual client
+        /// GUID
         /// </summary>
-        private HashSet<IocpTcpSocket> m_clientSet = null;
+        private Guid m_guid;
+
+        /// <summary>
+        /// sub client sets
+        /// </summary>
+        private HashSet<INetworkSocket> m_clientSet = new HashSet<INetworkSocket>();
+
+        /// <summary>
+        /// pending client sets
+        /// </summary>
+        private HashSet<INetworkClient> m_pendingClientSet = new HashSet<INetworkClient>();
+
         /// <summary>
         /// managing server
         /// </summary>
         private IParallelServer m_server = null;
+
         /// <summary>
         /// IP information
         /// </summary>
         private IPInfo m_ipInfo;
+
         /// <summary>
         /// general lock
         /// </summary>
         private Object m_generalLock = new Object();
+
+        /// <summary>
+        /// receive lock
+        /// </summary>
+        private Object m_receiveLock = new Object();
+
         /// <summary>
         /// send lock
         /// </summary>
         private Object m_sendLock = new Object();
+
+
         /// <summary>
-        /// send queue lock
+        /// Packet Sequence
         /// </summary>
-        private Object m_sendQueueLock = new Object();
-        /// <summary>
-        /// send queue
-        /// </summary>
-        private Queue<ParallelPacket> m_sendQueue = new Queue<ParallelPacket>();
+        private static long m_curPacketSequence = 0;
+        
         /// <summary>
         /// callback object
         /// </summary>
         private IParallelSocketCallback m_callBackObj = null;
 
         /// <summary>
-        /// send event
+        /// receive type
         /// </summary>
-        private EventEx m_sendEvent = new EventEx();
+        private ReceiveType m_receiveType;
+
+        /// <summary>
+        /// current number of sockets
+        /// </summary>
+        private int m_curSocketCount;
+
+        /// <summary>
+        /// Last received packet ID
+        /// </summary>
+        private long m_curReceivedPacketId = -1;
 
         /// <summary>
         /// flag for connection check
@@ -59,30 +89,41 @@ namespace EpParallelSocket.cs
         private bool m_isConnected = false;
 
 
+        /// <summary>
+        /// send ready event
+        /// </summary>
+        private EventEx m_sendReadyEvent = new EventEx(false, EventResetMode.ManualReset);
+
+        /// <summary>
+        /// packet queue
+        /// </summary>
+        private Queue<ParallelPacket> m_packetQueue = new Queue<ParallelPacket>();
+        /// <summary>
+        /// pending packet set
+        /// </summary>
+        private HashSet<ParallelPacket> m_pendingPacketSet = new HashSet<ParallelPacket>();
+        /// <summary>
+        /// error packet set
+        /// </summary>
+        private HashSet<ParallelPacket> m_errorPacketSet = new HashSet<ParallelPacket>();
+
+        /// <summary>
+        /// received packet queue
+        /// </summary>
+        private PQueue<ParallelPacket> m_receivedQueue = new PQueue<ParallelPacket>();
+
 
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="server">managing server</param>
-        public ParallelSocket(TcpClient client, INetworkServer server)
+        public ParallelSocket(INetworkSocket client, IParallelServer server)
             : base()
         {
-            m_client = client;
             m_server = server;
-            IPEndPoint remoteIpEndPoint = m_client.Client.RemoteEndPoint as IPEndPoint;
-            IPEndPoint localIpEndPoint = m_client.Client.LocalEndPoint as IPEndPoint;
-            if (remoteIpEndPoint != null)
-            {
-                String socketHostName = remoteIpEndPoint.Address.ToString();
-                m_ipInfo = new IPInfo(socketHostName, remoteIpEndPoint, IPEndPointType.REMOTE);
-            }
-            else if (localIpEndPoint != null)
-            {
-                String socketHostName = localIpEndPoint.Address.ToString();
-                m_ipInfo = new IPInfo(socketHostName, localIpEndPoint, IPEndPointType.LOCAL);
-            }
-
+            IPInfo = client.IPInfo;
+            AddSocket(client);
         }
 
         ~ParallelSocket()
@@ -100,6 +141,10 @@ namespace EpParallelSocket.cs
             get
             {
                 return m_ipInfo;
+            }
+            private set
+            {
+                m_ipInfo = value;
             }
         }
 
@@ -269,13 +314,60 @@ namespace EpParallelSocket.cs
             }
         }
 
-        /// <summary>
-        /// Send callback function
-        /// </summary>
-        /// <param name="result">result</param>
-        private static void onSent(IAsyncResult result)
+        public void AddSocket(INetworkSocket socket)
         {
-          
+            m_clientSet.Add(socket);
+            ((IocpTcpSocket)socket).CallBackObj = this;
+            ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.READY, null);
+            socket.Send(sendPacket.GetPacketRaw());
+        }
+
+        public Guid Guid
+        {
+            get
+            {
+                return m_guid;
+            }
+        }
+
+
+        /// <summary>
+        /// NewConnection callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        public void OnNewConnection(INetworkSocket socket)
+        {
+
+        }
+
+        /// <summary>
+        /// Receive callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        /// <param name="receivedPacket">received packet</param>
+        public void OnReceived(INetworkSocket socket, Packet receivedPacket)
+        {
+
+        }
+
+        /// <summary>
+        /// Send callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        /// <param name="status">stend status</param>
+        /// <param name="sentPacket">sent packet</param>
+        public void OnSent(INetworkSocket socket, SendStatus status, Packet sentPacket)
+        {
+
+        }
+
+        /// <summary>
+        /// Disconnect callback
+        /// </summary>
+        /// <param name="socket">client socket</param>
+        public void OnDisconnect(INetworkSocket socket)
+        {
+
         }
 
     }

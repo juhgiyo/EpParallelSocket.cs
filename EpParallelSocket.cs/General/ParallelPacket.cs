@@ -167,6 +167,15 @@ namespace EpParallelSocket.cs
         {
             return m_packetType;
         }
+
+        /// <summary>
+        /// Return the packet header size
+        /// </summary>
+        /// <returns>the packet header size</returns>
+        public int GetHeaderSize()
+        {
+            return HEADER_SIZE;
+        }
         /// <summary>
         /// Return the size of packet in byte
         /// </summary>

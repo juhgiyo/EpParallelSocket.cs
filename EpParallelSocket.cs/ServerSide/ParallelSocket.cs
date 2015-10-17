@@ -30,7 +30,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// pending client sets
         /// </summary>
-        private HashSet<INetworkClient> m_pendingClientSet = new HashSet<INetworkClient>();
+        private HashSet<INetworkSocket> m_pendingClientSet = new HashSet<INetworkSocket>();
 
         /// <summary>
         /// managing server
@@ -90,6 +90,11 @@ namespace EpParallelSocket.cs
 
 
         /// <summary>
+        /// flag for no delay
+        /// </summary>
+        private bool m_noDelay = true;
+
+        /// <summary>
         /// send ready event
         /// </summary>
         private EventEx m_sendReadyEvent = new EventEx(false, EventResetMode.ManualReset);
@@ -118,11 +123,14 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="server">managing server</param>
-        public ParallelSocket(INetworkSocket client, IParallelServer server)
+        public ParallelSocket(Guid guid,INetworkSocket client, IParallelServer server)
             : base()
         {
+            m_guid = guid;
             m_server = server;
             IPInfo = client.IPInfo;
+            NoDelay = server.NoDelay;
+            ReceiveType = server.ReceiveType;
             AddSocket(client);
         }
 
@@ -133,22 +141,6 @@ namespace EpParallelSocket.cs
         }
 
         /// <summary>
-        /// Get IP information
-        /// </summary>
-        /// <returns>IP information</returns>
-        public IPInfo IPInfo
-        {
-            get
-            {
-                return m_ipInfo;
-            }
-            private set
-            {
-                m_ipInfo = value;
-            }
-        }
-
-        /// <summary>
         /// Get managing server
         /// </summary>
         /// <returns>managing server</returns>
@@ -156,10 +148,63 @@ namespace EpParallelSocket.cs
         {
             get
             {
-                return m_server;
+                lock (m_generalLock)
+                {
+                    return m_server;
+                }
             }
         }
 
+        /// <summary>
+        /// Get IP information
+        /// </summary>
+        /// <returns>IP information</returns>
+        public IPInfo IPInfo
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_ipInfo;
+                }
+            }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_ipInfo = value;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Flag for NoDelay
+        /// </summary>
+        public bool NoDelay
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_noDelay;
+                }
+            }
+            set
+            {
+                lock (m_generalLock)
+                {
+                    m_noDelay = value;
+                    foreach (INetworkSocket socket in m_clientSet)
+                    {
+                        socket.NoDelay = m_noDelay;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// callback obj property
+        /// </summary>
         public IParallelSocketCallback CallBackObj
         {
             get
@@ -178,15 +223,107 @@ namespace EpParallelSocket.cs
             }
         }
 
+
+        /// <summary>
+        /// receive type
+        /// </summary>
+        public ReceiveType ReceiveType
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_receiveType;
+                }
+            }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_receiveType = value;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// current number of sockets property
+        /// </summary>
+        public int CurSocketCount
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_curSocketCount;
+                }
+            }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_curSocketCount = value;
+                }
+            }
+        }
+
+        public Guid Guid
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_guid;
+                }
+            }
+        }
+
+
         /// <summary>
         /// Start the new connection, and inform the callback object, that the new connection is made
         /// </summary>
         protected override void execute()
         {
             IsConnectionAlive = true;
-            startReceive();
+            startSend();
             if (CallBackObj != null)
                 CallBackObj.OnNewConnection(this);
+        }
+
+        /// <summary>
+        /// Start to send packet to the server
+        /// </summary>
+        private void startSend()
+        {
+            while (IsConnectionAlive)
+            {
+                lock (m_sendLock)
+                {
+                    while (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                    {
+                        if (m_errorPacketSet.Count > 0)
+                        {
+                            ParallelPacket sendPacket = m_errorPacketSet.First();
+                            m_errorPacketSet.Remove(sendPacket);
+                            m_pendingPacketSet.Add(sendPacket);
+                            INetworkSocket client = m_pendingClientSet.First();
+                            m_pendingClientSet.Remove(client);
+                            client.Send(sendPacket.GetPacketRaw());
+                            continue;
+                        }
+                        else if (m_packetQueue.Count > 0)
+                        {
+                            ParallelPacket sendPacket = m_packetQueue.Dequeue();
+                            m_pendingPacketSet.Add(sendPacket);
+                            INetworkSocket client = m_pendingClientSet.First();
+                            m_pendingClientSet.Remove(client);
+                            client.Send(sendPacket.GetPacketRaw());
+                            continue;
+                        }
+                    }
+                }
+                m_sendReadyEvent.WaitForEvent();
+            }
         }
 
         /// <summary>
@@ -196,33 +333,11 @@ namespace EpParallelSocket.cs
         {
             lock (m_generalLock)
             {
-                if (!IsConnectionAlive)
-                    return;
-                try
+                List<INetworkSocket> clientList = new List<INetworkSocket>(m_clientSet);
+                foreach (INetworkSocket socket in clientList)
                 {
-                    m_client.Client.Shutdown(SocketShutdown.Both);
-                    //m_client.Client.Disconnect(true);
+                    socket.Disconnect();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message + " >" + ex.StackTrace);
-                }
-                m_client.Close();
-                IsConnectionAlive = false;
-            }
-            m_server.DetachClient(this);
-
-            lock (m_sendQueueLock)
-            {
-                m_sendQueue.Clear();
-            }
-            if (CallBackObj != null)
-            {
-                Task t = new Task(delegate()
-                {
-                    CallBackObj.OnDisconnect(this);
-                });
-                t.Start();
             }
         }
 
@@ -237,15 +352,6 @@ namespace EpParallelSocket.cs
                 lock (m_generalLock)
                 {
                     return m_isConnected;
-                    // 	        try
-                    // 	        {
-                    // 	            return m_client.Connected;
-                    // 	        }
-                    // 	        catch (Exception ex)
-                    // 	        {
-                    // 	            Console.WriteLine(ex.Message + " >" + ex.StackTrace);
-                    // 	            return false;
-                    // 	        }
                 }
             }
             private set
@@ -258,6 +364,27 @@ namespace EpParallelSocket.cs
         }
 
         /// <summary>
+        /// Get current packet sequence
+        /// </summary>
+        /// <returns>current packet sequence</returns>
+        private long getCurPacketSequence()
+        {
+            lock (m_generalLock)
+            {
+                long retSequence = m_curPacketSequence;
+                try
+                {
+                    m_curPacketSequence++;
+                }
+                catch (Exception)
+                {
+                    m_curPacketSequence = 0;
+                }
+                return retSequence;
+            }
+        }
+
+        /// <summary>
         /// Send given data to the client
         /// </summary>
         /// <param name="data">data in byte array</param>
@@ -265,12 +392,12 @@ namespace EpParallelSocket.cs
         /// <param name="dataSize">data size in bytes</param>
         public void Send(byte[] data, int offset, int dataSize)
         {
-            Packet sendPacket = new Packet(data, offset, dataSize, false);
-            //             byte[] packet = new byte[dataSize];
-            //             MemoryStream stream = new MemoryStream(packet);
-            //             stream.Write(data, offset, dataSize);
-            //             Packet sendPacket = new Packet(packet,0, packet.Count(), false);
-            Send(sendPacket);
+            lock (m_sendLock)
+            {
+                m_packetQueue.Enqueue(new ParallelPacket(getCurPacketSequence(), ParallelPacketType.DATA, data, offset, dataSize));
+                if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                    m_sendReadyEvent.SetEvent();
+            }
         }
 
         /// <summary>
@@ -317,18 +444,16 @@ namespace EpParallelSocket.cs
         public void AddSocket(INetworkSocket socket)
         {
             m_clientSet.Add(socket);
+            CurSocketCount++;
             ((IocpTcpSocket)socket).CallBackObj = this;
             ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.READY, null);
             socket.Send(sendPacket.GetPacketRaw());
-        }
-
-        public Guid Guid
-        {
-            get
+            lock (m_sendLock)
             {
-                return m_guid;
+                m_pendingClientSet.Add(socket);
             }
         }
+
 
 
         /// <summary>
@@ -337,7 +462,7 @@ namespace EpParallelSocket.cs
         /// <param name="socket">client socket</param>
         public void OnNewConnection(INetworkSocket socket)
         {
-
+            // Will never get called
         }
 
         /// <summary>
@@ -347,7 +472,48 @@ namespace EpParallelSocket.cs
         /// <param name="receivedPacket">received packet</param>
         public void OnReceived(INetworkSocket socket, Packet receivedPacket)
         {
-
+            ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
+            switch (receivedParallelPacket.GetPacketType())
+            {
+                case ParallelPacketType.DATA:
+                    if (m_receiveType == ReceiveType.BURST)
+                    {
+                        if (CallBackObj != null)
+                        {
+                            Task t = new Task(delegate()
+                            {
+                                CallBackObj.OnReceived(this, receivedParallelPacket);
+                            });
+                            t.Start();
+                            //CallBackObj.OnReceived(this, receivedParallelPacket);
+                        }
+                    }
+                    else if (m_receiveType == ReceiveType.SEQUENTIAL)
+                    {
+                        lock (m_receiveLock)
+                        {
+                            m_receivedQueue.Enqueue(receivedParallelPacket);
+                            while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                            {
+                                ParallelPacket curPacket = m_receivedQueue.Dequeue();
+                                m_curReceivedPacketId = curPacket.GetPacketID();
+                                if (CallBackObj != null)
+                                {
+                                    Task t = new Task(delegate()
+                                    {
+                                        CallBackObj.OnReceived(this, receivedParallelPacket);
+                                    });
+                                    t.Start();
+                                    //m_callBackObj.OnReceived(this, receivedParallelPacket);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    socket.Disconnect(); // Invalid protocol
+                    break;
+            }
         }
 
         /// <summary>
@@ -358,7 +524,34 @@ namespace EpParallelSocket.cs
         /// <param name="sentPacket">sent packet</param>
         public void OnSent(INetworkSocket socket, SendStatus status, Packet sentPacket)
         {
+            ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
+            if (sentParallelPacket.GetPacketType() == ParallelPacketType.DATA)
+            {
+                lock (m_sendLock)
+                {
+                    m_pendingPacketSet.Remove(sentParallelPacket);
+                    if (status == SendStatus.SUCCESS || status == SendStatus.FAIL_INVALID_PACKET)
+                    {
+                        m_pendingClientSet.Add(socket);
+                    }
+                    if (status != SendStatus.SUCCESS)
+                    {
+                        m_errorPacketSet.Add(sentParallelPacket);
+                    }
+                    if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                        m_sendReadyEvent.SetEvent();
+                }
+                if (CallBackObj != null)
+                {
+                    Task t = new Task(delegate()
+                    {
+                        CallBackObj.OnSent(this, status, sentParallelPacket);
+                    });
+                    t.Start();
+                    //CallBackObj.OnSent(this, status, sentParallelPacket);
+                }
 
+            }
         }
 
         /// <summary>
@@ -367,7 +560,41 @@ namespace EpParallelSocket.cs
         /// <param name="socket">client socket</param>
         public void OnDisconnect(INetworkSocket socket)
         {
+            lock (m_generalLock)
+            {
+                m_clientSet.Remove(socket);
 
+                lock (m_sendLock)
+                {
+                    m_pendingClientSet.Remove(socket);
+                }
+
+                CurSocketCount--;
+                if (CurSocketCount <= 0)
+                {
+                    lock (m_sendLock)
+                    {
+                        m_packetQueue.Clear();
+                        m_pendingPacketSet.Clear();
+                        m_errorPacketSet.Clear();
+                    }
+                    lock (m_receiveLock)
+                    {
+                        m_receivedQueue.Clear();
+                    }
+                    m_sendReadyEvent.SetEvent();
+                    IsConnectionAlive = false;
+                    m_server.DetachClient(this);
+                    if (CallBackObj != null)
+                    {
+                        Task t = new Task(delegate()
+                        {
+                            CallBackObj.OnDisconnect(this);
+                        });
+                        t.Start();
+                    }
+                }
+            }
         }
 
     }

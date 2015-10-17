@@ -77,6 +77,15 @@ namespace EpParallelSocket.cs
         }
 
         /// <summary>
+        /// flag for no delay
+        /// </summary>
+        public bool NoDelay
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Default constructor
         /// </summary>
         public ParallelServerOps()
@@ -84,17 +93,21 @@ namespace EpParallelSocket.cs
             CallBackObj = null;
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
+            NoDelay = true;
         }
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="callBackObj">callback object</param>
         /// <param name="port">port</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port,ReceiveType receiveType)
+        /// <param name="receiveType">receive type</param>
+        /// <param name="noDelay">noDelay falg</param>
+        public ParallelServerOps(IParallelServerCallback callBackObj, String port,ReceiveType receiveType, bool noDelay=true)
         {
             this.Port = port;
             this.CallBackObj = callBackObj;
             this.ReceiveType = receiveType;
+            this.NoDelay = noDelay;
         }
 
         /// <summary>
@@ -130,6 +143,16 @@ namespace EpParallelSocket.cs
         {
             get;
         }
+
+        /// <summary>
+        /// flag for no delay
+        /// </summary>
+        bool NoDelay
+        {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// Start the server with given option
@@ -263,6 +286,32 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <returns>the server managing this socket</returns>
         IParallelServer Server { get; }
+
+        /// <summary>
+        /// callback object property
+        /// </summary>
+        IParallelSocketCallback CallBackObj { get; }
+
+
+        /// <summary>
+        /// guid property
+        /// </summary>
+        Guid Guid { get; }
+
+        /// <summary>
+        /// receive type
+        /// </summary>
+        ReceiveType ReceiveType { get; }
+
+
+        /// <summary>
+        /// flag for no delay
+        /// </summary>
+        bool NoDelay
+        {
+            get;
+            set;
+        }
 
     }
 

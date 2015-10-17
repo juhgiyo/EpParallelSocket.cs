@@ -21,11 +21,6 @@ namespace EpParallelSocket.cs
         private String m_port = ParallelSocketConf.DEFAULT_PORT;
 
         /// <summary>
-        /// NoDelay flag
-        /// </summary>
-        private bool m_noDelay = true;
-
-        /// <summary>
         /// receive type
         /// </summary>
         private ReceiveType m_receiveType = ReceiveType.SEQUENTIAL;
@@ -150,29 +145,6 @@ namespace EpParallelSocket.cs
         }
 
         /// <summary>
-        /// No delay property
-        /// </summary>
-        public bool NoDelay
-        {
-            get
-            {
-                lock (m_generalLock)
-                {
-                    return m_noDelay;
-                }
-                
-            }
-            set
-            {
-                lock (m_generalLock)
-                {
-                    m_noDelay = value;
-                    m_listener.NoDelay = m_noDelay;
-                }
-            }
-        }
-
-        /// <summary>
         /// Callback Exception class
         /// </summary>
         private class CallbackException : Exception
@@ -222,7 +194,7 @@ namespace EpParallelSocket.cs
                         Port = ServerConf.DEFAULT_PORT;
                     }
                     m_socketMap.Clear();
-                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port,m_serverOps.NoDelay);
+                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port,true);
                     m_listener.StartServer(listenerOps);
                 }
 

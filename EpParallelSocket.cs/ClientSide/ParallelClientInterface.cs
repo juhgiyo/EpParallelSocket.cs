@@ -92,14 +92,7 @@ namespace EpParallelSocket.cs
             get;
             set;
         }
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        public bool NoDelay
-        {
-            get;
-            set;
-        }
+
         /// <summary>
         /// connection time out in millisecond
         /// </summary>
@@ -119,7 +112,6 @@ namespace EpParallelSocket.cs
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
             MaxSocketCount = ParallelSocketConf.DEFAULT_MAX_SOCKET_NUM;
-            NoDelay = true;
             ConnectionTimeOut = Timeout.Infinite;
         }
 
@@ -133,14 +125,13 @@ namespace EpParallelSocket.cs
         /// <param name="maxSocketCount">maximum number of sockets to use</param>
         /// <param name="noDelay">flag for no delay</param>
         /// <param name="connectionTimeOut">connection wait time in millisecond</param>
-        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int maxSocketCount = ParallelSocketConf.DEFAULT_MAX_SOCKET_NUM, bool noDelay = true, int connectionTimeOut = Timeout.Infinite)
+        public ParallelClientOps(IParallelClientCallback callBackObj, String hostName, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int maxSocketCount = ParallelSocketConf.DEFAULT_MAX_SOCKET_NUM, int connectionTimeOut = Timeout.Infinite)
         {
             this.CallBackObj = callBackObj;
             this.HostName = hostName;
             this.Port = port;
             this.ReceiveType = receiveType;
             this.MaxSocketCount = maxSocketCount;
-            this.NoDelay = noDelay;
             this.ConnectionTimeOut = connectionTimeOut;
         }
         /// <summary>
@@ -199,13 +190,7 @@ namespace EpParallelSocket.cs
         {
             get;
         }
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        bool NoDelay
-        {
-            get;
-        }
+
         /// <summary>
         /// connection time out in millisecond
         /// </summary>

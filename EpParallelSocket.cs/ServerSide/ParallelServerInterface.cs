@@ -76,14 +76,6 @@ namespace EpParallelSocket.cs
             set;
         }
 
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        public bool NoDelay
-        {
-            get;
-            set;
-        }
 
         /// <summary>
         /// Default constructor
@@ -93,7 +85,7 @@ namespace EpParallelSocket.cs
             CallBackObj = null;
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
-            NoDelay = true;
+
         }
         /// <summary>
         /// Default constructor
@@ -107,7 +99,6 @@ namespace EpParallelSocket.cs
             this.Port = port;
             this.CallBackObj = callBackObj;
             this.ReceiveType = receiveType;
-            this.NoDelay = noDelay;
         }
 
         /// <summary>
@@ -142,15 +133,6 @@ namespace EpParallelSocket.cs
         ReceiveType ReceiveType
         {
             get;
-        }
-
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        bool NoDelay
-        {
-            get;
-            set;
         }
 
 
@@ -303,15 +285,6 @@ namespace EpParallelSocket.cs
         /// </summary>
         ReceiveType ReceiveType { get; }
 
-
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        bool NoDelay
-        {
-            get;
-            set;
-        }
 
     }
 

@@ -126,10 +126,6 @@ namespace EpParallelSocket.cs
         private long m_curReceivedPacketId = -1;
 
         /// <summary>
-        /// flag for nodelay
-        /// </summary>
-        private bool m_noDelay;
-        /// <summary>
         /// wait time in millisecond
         /// </summary>
         private int m_connectionTimeOut;
@@ -308,26 +304,7 @@ namespace EpParallelSocket.cs
                 }
             }
         }
-        /// <summary>
-        /// flag for no delay
-        /// </summary>
-        public bool NoDelay
-        {
-            get
-            {
-                lock (m_generalLock)
-                {
-                    return m_noDelay;
-                }
-            }
-            private set
-            {
-                lock (m_generalLock)
-                {
-                    m_noDelay = value;
-                }
-            }
-        }
+       
         /// <summary>
         /// connection time out in millisecond
         /// </summary>
@@ -419,7 +396,6 @@ namespace EpParallelSocket.cs
                     Port = m_clientOps.Port;
                     ReceiveType = m_clientOps.ReceiveType;
                     MaxSocketCount = m_clientOps.MaxSocketCount;
-                    NoDelay = m_clientOps.NoDelay;
                     ConnectionTimeOut = m_clientOps.ConnectionTimeOut;
 
                     m_curPacketSequence = 0;
@@ -451,7 +427,7 @@ namespace EpParallelSocket.cs
                     {
                         Port = ServerConf.DEFAULT_PORT;
                     }
-                    ClientOps clientOps = new ClientOps(this, HostName, Port, NoDelay, ConnectionTimeOut);
+                    ClientOps clientOps = new ClientOps(this, HostName, Port, true, ConnectionTimeOut);
                     for (int i = 0; i < MaxSocketCount; i++)
                     {
                         INetworkClient client = new IocpTcpClient();

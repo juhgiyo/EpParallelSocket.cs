@@ -90,11 +90,6 @@ namespace EpParallelSocket.cs
 
 
         /// <summary>
-        /// flag for no delay
-        /// </summary>
-        private bool m_noDelay = true;
-
-        /// <summary>
         /// send ready event
         /// </summary>
         private EventEx m_sendReadyEvent = new EventEx(false, EventResetMode.ManualReset);
@@ -129,7 +124,6 @@ namespace EpParallelSocket.cs
             m_guid = guid;
             m_server = server;
             IPInfo = client.IPInfo;
-            NoDelay = server.NoDelay;
             ReceiveType = server.ReceiveType;
             AddSocket(client);
         }
@@ -178,30 +172,6 @@ namespace EpParallelSocket.cs
         }
 
 
-        /// <summary>
-        /// Flag for NoDelay
-        /// </summary>
-        public bool NoDelay
-        {
-            get
-            {
-                lock (m_generalLock)
-                {
-                    return m_noDelay;
-                }
-            }
-            set
-            {
-                lock (m_generalLock)
-                {
-                    m_noDelay = value;
-                    foreach (INetworkSocket socket in m_clientSet)
-                    {
-                        socket.NoDelay = m_noDelay;
-                    }
-                }
-            }
-        }
         /// <summary>
         /// callback obj property
         /// </summary>

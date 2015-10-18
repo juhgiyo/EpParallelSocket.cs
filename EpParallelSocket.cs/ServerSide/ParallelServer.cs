@@ -261,7 +261,10 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
-                    return m_listener.IsServerStarted;
+                    if(m_listener!=null)
+                        return m_listener.IsServerStarted;
+                    else
+                        return false;
                 }
             }
         }

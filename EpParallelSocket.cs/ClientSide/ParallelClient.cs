@@ -508,6 +508,16 @@ namespace EpParallelSocket.cs
         {
             if (IsConnectionAlive)
             {
+                ConnectStatus status = ConnectStatus.FAIL_ALREADY_CONNECTED;
+                if (ops.CallBackObj != null)
+                {
+                    Task t = new Task(delegate()
+                    {
+                        ops.CallBackObj.OnConnected(this, status);
+                    });
+                    t.Start();
+
+                }
                 return;
             }
 
@@ -647,7 +657,7 @@ namespace EpParallelSocket.cs
             switch (receivedParallelPacket.GetPacketType())
             {
                 case ParallelPacketType.DATA:
-                    if (m_receiveType == ReceiveType.BURST)
+                    if (ReceiveType == ReceiveType.BURST)
                     {
                         if (CallBackObj != null)
                         {
@@ -664,7 +674,7 @@ namespace EpParallelSocket.cs
                         lock (m_receiveLock)
                         {
                             m_receivedQueue.Enqueue(receivedParallelPacket);
-                            while (m_curReceivedPacketId == -1 || (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID()))
+                            while (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
                             {
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
                                 m_curReceivedPacketId = curPacket.GetPacketID();
@@ -675,7 +685,7 @@ namespace EpParallelSocket.cs
 //                                         CallBackObj.OnReceived(this, curPacket);
 //                                     });
 //                                     t.Start();
-                                    m_callBackObj.OnReceived(this, curPacket);
+                                    CallBackObj.OnReceived(this, curPacket);
                                 }
                             }
                         }
@@ -683,7 +693,7 @@ namespace EpParallelSocket.cs
                     break;
                 case ParallelPacketType.IDENTITY_REQUEST:
                     PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(new IdentityResponse(Guid));
-                    ParallelPacket sendPacket=new ParallelPacket(getCurPacketSequence(),ParallelPacketType.IDENTITY_RESPONSE,serializer.GetPacketRaw());
+                    ParallelPacket sendPacket=new ParallelPacket(-1,ParallelPacketType.IDENTITY_RESPONSE,serializer.GetPacketRaw());
                     client.Send(sendPacket.GetPacketRaw());
                     break;
                 case ParallelPacketType.READY:

@@ -80,12 +80,15 @@ namespace EpParallelSocket.cs
         {
             m_packetId = packetId;
             m_packetType = packetType;
-
-            m_packet = new byte[sizeof(long) + sizeof(int) + data.Count()];
+            if(data==null)
+                m_packet = new byte[sizeof(long) + sizeof(int)];
+            else
+                m_packet = new byte[sizeof(long) + sizeof(int) + data.Count()];
             MemoryStream mStream = new MemoryStream(m_packet);
             mStream.Write(BitConverter.GetBytes(m_packetId), 0, 8);
             mStream.Write(BitConverter.GetBytes((int)m_packetType), 0, 4);
-            mStream.Write(data, 0, data.Count());
+            if(data!=null)  
+                mStream.Write(data, 0, data.Count());
 
         }
 
@@ -106,7 +109,8 @@ namespace EpParallelSocket.cs
             MemoryStream mStream = new MemoryStream(m_packet);
             mStream.Write(BitConverter.GetBytes(m_packetId), 0, 8);
             mStream.Write(BitConverter.GetBytes((int)m_packetType), 0, 4);
-            mStream.Write(data, offset, dataSize);
+            if(data!=null)
+                mStream.Write(data, offset, dataSize);
 
         }
 

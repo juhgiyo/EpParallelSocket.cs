@@ -403,6 +403,7 @@ namespace EpParallelSocket.cs
                             {
                                 // Create new Parallel Socket
                                 ParallelSocket parallelSocket = new ParallelSocket(guid,socket, this);
+                                parallelSocket.CallBackObj = socketCallback;
                                 parallelSocket.Start();
                                 m_socketMap[guid] = parallelSocket;
                             }

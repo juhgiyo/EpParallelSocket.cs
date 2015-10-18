@@ -651,12 +651,12 @@ namespace EpParallelSocket.cs
                     {
                         if (CallBackObj != null)
                         {
-                            Task t = new Task(delegate()
-                            {
-                                CallBackObj.OnReceived(this, receivedParallelPacket);
-                            });
-                            t.Start();
-                            //CallBackObj.OnReceived(this, receivedParallelPacket);
+//                             Task t = new Task(delegate()
+//                             {
+//                                 CallBackObj.OnReceived(this, receivedParallelPacket);
+//                             });
+//                             t.Start();
+                            CallBackObj.OnReceived(this, receivedParallelPacket);
                         }
                     }
                     else if (m_receiveType == ReceiveType.SEQUENTIAL)
@@ -664,18 +664,18 @@ namespace EpParallelSocket.cs
                         lock (m_receiveLock)
                         {
                             m_receivedQueue.Enqueue(receivedParallelPacket);
-                            while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                            while (m_curReceivedPacketId == -1 || (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID()))
                             {
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
                                 m_curReceivedPacketId = curPacket.GetPacketID();
                                 if (CallBackObj != null)
                                 {
-                                    Task t = new Task(delegate()
-                                    {
-                                        CallBackObj.OnReceived(this, receivedParallelPacket);
-                                    });
-                                    t.Start();
-                                    //m_callBackObj.OnReceived(this, receivedParallelPacket);
+//                                     Task t = new Task(delegate()
+//                                     {
+//                                         CallBackObj.OnReceived(this, curPacket);
+//                                     });
+//                                     t.Start();
+                                    m_callBackObj.OnReceived(this, curPacket);
                                 }
                             }
                         }
@@ -683,13 +683,15 @@ namespace EpParallelSocket.cs
                     break;
                 case ParallelPacketType.IDENTITY_REQUEST:
                     PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(new IdentityResponse(Guid));
-                    ParallelPacket sendPacket=new ParallelPacket(-1,ParallelPacketType.IDENTITY_RESPONSE,serializer.GetPacketRaw());
+                    ParallelPacket sendPacket=new ParallelPacket(getCurPacketSequence(),ParallelPacketType.IDENTITY_RESPONSE,serializer.GetPacketRaw());
                     client.Send(sendPacket.GetPacketRaw());
                     break;
                 case ParallelPacketType.READY:
                     lock (m_sendLock)
                     {
                         m_pendingClientSet.Add(client);
+                        if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                            m_sendReadyEvent.SetEvent();
                     }
                     break;
             }
@@ -726,7 +728,7 @@ namespace EpParallelSocket.cs
                         CallBackObj.OnSent(this, status, sentParallelPacket);
                     });
                     t.Start();
-                    //CallBackObj.OnSent(this, status, sentParallelPacket);
+                   // CallBackObj.OnSent(this, status, sentParallelPacket);
                 }           
             
             }

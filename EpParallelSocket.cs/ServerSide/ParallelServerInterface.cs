@@ -94,7 +94,7 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="receiveType">receive type</param>
         /// <param name="noDelay">noDelay falg</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port,ReceiveType receiveType, bool noDelay=true)
+        public ParallelServerOps(IParallelServerCallback callBackObj, String port,ReceiveType receiveType)
         {
             this.Port = port;
             this.CallBackObj = callBackObj;

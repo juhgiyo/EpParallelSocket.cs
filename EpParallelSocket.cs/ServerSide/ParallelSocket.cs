@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics;
 
 namespace EpParallelSocket.cs
 {
@@ -255,9 +256,9 @@ namespace EpParallelSocket.cs
         protected override void execute()
         {
             IsConnectionAlive = true;
-            startSend();
             if (CallBackObj != null)
                 CallBackObj.OnNewConnection(this);
+            startSend();
         }
 
         /// <summary>
@@ -416,11 +417,13 @@ namespace EpParallelSocket.cs
             m_clientSet.Add(socket);
             CurSocketCount++;
             ((IocpTcpSocket)socket).CallBackObj = this;
-            ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.READY, null);
+            ParallelPacket sendPacket = new ParallelPacket(getCurPacketSequence(), ParallelPacketType.READY, null);
             socket.Send(sendPacket.GetPacketRaw());
             lock (m_sendLock)
             {
                 m_pendingClientSet.Add(socket);
+                if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
+                    m_sendReadyEvent.SetEvent();
             }
         }
 
@@ -450,12 +453,12 @@ namespace EpParallelSocket.cs
                     {
                         if (CallBackObj != null)
                         {
-                            Task t = new Task(delegate()
-                            {
-                                CallBackObj.OnReceived(this, receivedParallelPacket);
-                            });
-                            t.Start();
-                            //CallBackObj.OnReceived(this, receivedParallelPacket);
+//                             Task t = new Task(delegate()
+//                             {
+//                                 CallBackObj.OnReceived(this, receivedParallelPacket);
+//                             });
+//                             t.Start();
+                            CallBackObj.OnReceived(this, receivedParallelPacket);
                         }
                     }
                     else if (m_receiveType == ReceiveType.SEQUENTIAL)
@@ -463,18 +466,18 @@ namespace EpParallelSocket.cs
                         lock (m_receiveLock)
                         {
                             m_receivedQueue.Enqueue(receivedParallelPacket);
-                            while (m_curReceivedPacketId == -1 || m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                            while (m_curReceivedPacketId == -1 || (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID()))
                             {
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
                                 m_curReceivedPacketId = curPacket.GetPacketID();
                                 if (CallBackObj != null)
                                 {
-                                    Task t = new Task(delegate()
-                                    {
-                                        CallBackObj.OnReceived(this, receivedParallelPacket);
-                                    });
-                                    t.Start();
-                                    //m_callBackObj.OnReceived(this, receivedParallelPacket);
+//                                     Task t = new Task(delegate()
+//                                     {
+//                                         CallBackObj.OnReceived(this, curPacket);
+//                                     });
+//                                     t.Start();
+                                    m_callBackObj.OnReceived(this, curPacket);
                                 }
                             }
                         }

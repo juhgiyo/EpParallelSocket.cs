@@ -48,15 +48,25 @@ namespace EpParallelSocketClientSample
         /// <param name="status">connection status</param>
         public void OnConnected(IParallelClient client, ConnectStatus status)
         {
-            Task t = new Task(delegate()
+            if (status == ConnectStatus.SUCCESS)
             {
-                for (int i = 0; i < m_count; i++)
+                Debug.Print("Connected: " + client.Guid.ToString());
+
+                Task t = new Task(delegate()
                 {
-                    byte[] array = Encoding.ASCII.GetBytes("[" + i + "] "+m_sendText);
-                    client.Send(array);
-                }
-            });
-            t.Start();
+                    for (int i = 0; i < m_count; i++)
+                    {
+                        byte[] array = Encoding.ASCII.GetBytes("[" + i + "] " + m_sendText);
+                        client.Send(array);
+                    }
+                });
+                t.Start();
+            }
+            else
+            {
+                Debug.Print(status.ToString());
+            }
+            
         }
 
         /// <summary>
@@ -87,7 +97,7 @@ namespace EpParallelSocketClientSample
         /// <param name="client">client</param>
         public void OnDisconnect(IParallelClient client)
         {
-
+            Debug.Print("Disconnected");
         }
     }
 }

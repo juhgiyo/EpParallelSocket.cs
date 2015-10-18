@@ -90,7 +90,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Packet Sequence
         /// </summary>
-        private static long m_curPacketSequence = 0;
+        private long m_curPacketSequence = 0;
 
         /// <summary>
         /// callback object
@@ -625,10 +625,10 @@ namespace EpParallelSocket.cs
                     {
                         Task t = new Task(delegate()
                         {
-                            CallBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
+                            CallBackObj.OnConnected(this, status);
                         });
                         t.Start();
-                        //CallBackObj.OnConnected(this, ConnectStatus.FAIL_SOCKET_ERROR);
+                        //CallBackObj.OnConnected(this, status);
                     }
                 }
                

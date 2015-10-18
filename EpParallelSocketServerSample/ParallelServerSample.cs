@@ -89,6 +89,7 @@ namespace EpParallelSocketServerSample
         /// <param name="server">server</param>
         public void OnServerStopped(IParallelServer server)
         {
+            Debug.Print("Server stopped");
             ChangeTitle(false);
         }
 

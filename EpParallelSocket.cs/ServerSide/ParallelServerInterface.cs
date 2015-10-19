@@ -76,8 +76,21 @@ namespace EpParallelSocket.cs
             set;
         }
 
-
+        /// <summary>
+        /// Maximum number of total stream count for the server
+        /// </summary>
         public int MaxSocketCount
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// Max stream count per parallel socket
+        /// (This is independent from MaxSocketCount)
+        /// </summary>
+        public int MaxStreamCountPerSocket
         {
             get;
             set;
@@ -92,6 +105,7 @@ namespace EpParallelSocket.cs
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
             MaxSocketCount = SocketCount.Infinite;
+            MaxStreamCountPerSocket = SocketCount.Infinite;
         }
         /// <summary>
         /// Default constructor
@@ -100,12 +114,13 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="receiveType">receive type</param>
         /// <param name="noDelay">noDelay falg</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType=ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite)
+        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite, int streamCountPerSocket = SocketCount.Infinite)
         {
             this.Port = port;
             this.CallBackObj = callBackObj;
             this.ReceiveType = receiveType;
             MaxSocketCount = socketCount;
+            MaxStreamCountPerSocket = streamCountPerSocket;
         }
 
         /// <summary>
@@ -141,7 +156,22 @@ namespace EpParallelSocket.cs
         {
             get;
         }
+        /// <summary>
+        /// maximum socket count property
+        /// </summary>
+        int MaxSocketCount
+        {
+            get;
+        }
 
+        /// <summary>
+        /// maximum number of stream per parallel socket
+        /// </summary>
+        int MaxStreamCountPerSocket
+        {
+            get;
+        }
+        
 
         /// <summary>
         /// Start the server with given option
@@ -293,7 +323,10 @@ namespace EpParallelSocket.cs
         /// </summary>
         ReceiveType ReceiveType { get; }
 
-
+        /// <summary>
+        /// maximum number of stream per parallel socket
+        /// </summary>
+        int MaxStreamCountPerSocket { get; }
     }
 
 

@@ -80,6 +80,11 @@ namespace EpParallelSocket.cs
         private int m_curSocketCount;
 
         /// <summary>
+        /// maximum number of stream per parallel socket
+        /// </summary>
+        private int m_maxStreamCountPerSocket;
+
+        /// <summary>
         /// Last received packet ID
         /// </summary>
         private long m_curReceivedPacketId = -1;
@@ -126,6 +131,7 @@ namespace EpParallelSocket.cs
             m_server = server;
             IPInfo = client.IPInfo;
             ReceiveType = server.ReceiveType;
+            MaxStreamCountPerSocket = server.MaxStreamCountPerSocket;
             AddSocket(client);
         }
 
@@ -238,6 +244,10 @@ namespace EpParallelSocket.cs
             }
         }
 
+
+        /// <summary>
+        /// guid property
+        /// </summary>
         public Guid Guid
         {
             get
@@ -249,6 +259,26 @@ namespace EpParallelSocket.cs
             }
         }
 
+        /// <summary>
+        /// maximum number of stream per parallel socket
+        /// </summary>
+        public int MaxStreamCountPerSocket
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_maxStreamCountPerSocket;
+                }
+            }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_maxStreamCountPerSocket = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Start the new connection, and inform the callback object, that the new connection is made
@@ -414,7 +444,15 @@ namespace EpParallelSocket.cs
 
         public void AddSocket(INetworkSocket socket)
         {
-            m_clientSet.Add(socket);
+            lock (m_generalLock)
+            {
+                if (MaxStreamCountPerSocket != SocketCount.Infinite && m_clientSet.Count > MaxStreamCountPerSocket)
+                {
+                    socket.Disconnect();
+                    return;
+                }
+                m_clientSet.Add(socket);
+            }
             CurSocketCount++;
             ((IocpTcpSocket)socket).CallBackObj = this;
             ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.READY, null);

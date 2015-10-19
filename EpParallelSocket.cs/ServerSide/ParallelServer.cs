@@ -26,6 +26,11 @@ namespace EpParallelSocket.cs
         private int m_maxSocketCount = SocketCount.Infinite;
 
         /// <summary>
+        /// maximum number of stream per socket
+        /// </summary>
+        private int m_maxStreamCountPerSocket = SocketCount.Infinite;
+
+        /// <summary>
         /// receive type
         /// </summary>
         private ReceiveType m_receiveType = ReceiveType.SEQUENTIAL;
@@ -161,7 +166,7 @@ namespace EpParallelSocket.cs
                     return m_maxSocketCount;
                 }
             }
-            set
+            private set
             {
                 lock (m_generalLock)
                 {
@@ -170,6 +175,27 @@ namespace EpParallelSocket.cs
             }
         }
 
+        /// <summary>
+        /// maximum number of stream per parallel socket
+        /// </summary>
+        public int MaxStreamCountPerSocket
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_maxStreamCountPerSocket;
+                }
+            }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_maxStreamCountPerSocket = value;
+                }
+            }
+        }
+        
         /// <summary>
         /// Callback Exception class
         /// </summary>
@@ -215,6 +241,7 @@ namespace EpParallelSocket.cs
                     Port = m_serverOps.Port;
                     ReceiveType = m_serverOps.ReceiveType;
                     MaxSocketCount = m_serverOps.MaxSocketCount;
+                    MaxStreamCountPerSocket = m_serverOps.MaxStreamCountPerSocket;
 
                     if (Port == null || Port.Length == 0)
                     {

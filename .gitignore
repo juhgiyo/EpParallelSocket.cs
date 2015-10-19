@@ -2,3 +2,5 @@
 obj/
 bin/
 *.bak
+*.psess
+*.vsp

@@ -77,6 +77,11 @@ namespace EpParallelSocket.cs
         /// global unique id
         /// </summary>
         public Guid m_guid;
+
+        /// <summary>
+        /// stream count
+        /// </summary>
+        public int m_streamCount;
         
         /// <summary>
         /// Default constructor
@@ -88,14 +93,16 @@ namespace EpParallelSocket.cs
         /// Default constructor
         /// </summary>
         /// <param name="guid">guid</param>
-        public IdentityResponse(Guid guid)
+        public IdentityResponse(Guid guid, int streamCount)
         {
             m_guid=guid;
+            m_streamCount = streamCount;
         }
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             // Use the AddValue method to specify serialized values.
             info.AddValue("guid", m_guid, typeof(Guid));
+            info.AddValue("streamCount", m_streamCount, typeof(int));
         }
 
         // The special constructor is used to deserialize values. 
@@ -103,6 +110,8 @@ namespace EpParallelSocket.cs
         {
             // Reset the property value using the GetValue method.
             m_guid = (Guid)info.GetValue("guid", typeof(Guid));
+            m_streamCount = (int)info.GetValue("streamCount", typeof(int));
+            
         }
     }
 }

@@ -77,6 +77,12 @@ namespace EpParallelSocket.cs
         }
 
 
+        public int MaxSocketCount
+        {
+            get;
+            set;
+        } 
+
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -85,7 +91,7 @@ namespace EpParallelSocket.cs
             CallBackObj = null;
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
-
+            MaxSocketCount = SocketCount.Infinite;
         }
         /// <summary>
         /// Default constructor
@@ -94,11 +100,12 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="receiveType">receive type</param>
         /// <param name="noDelay">noDelay falg</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port,ReceiveType receiveType)
+        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType=ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite)
         {
             this.Port = port;
             this.CallBackObj = callBackObj;
             this.ReceiveType = receiveType;
+            MaxSocketCount = socketCount;
         }
 
         /// <summary>
@@ -203,8 +210,9 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="server">server</param>
         /// <param name="ipInfo">connection info</param>
+        /// <param name="streamCount">stream count for the parallel socket</param>
         /// <returns>the socket callback interface</returns>
-        IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo);
+        IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount);
         /// <summary>
         /// Server stopped callback
         /// </summary>

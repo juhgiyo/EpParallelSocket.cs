@@ -27,7 +27,7 @@ namespace EpParallelSocketClientSample
             tbHostname.Text = "localhost";
             tbPort.Text = "8088";
             tbSendText.Text = "Hello";
-            tbCount.Text = "100";
+            tbCount.Text = "30";
         }
         
         private void btnSend_Click(object sender, EventArgs e)

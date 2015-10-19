@@ -692,7 +692,7 @@ namespace EpParallelSocket.cs
                     }
                     break;
                 case ParallelPacketType.IDENTITY_REQUEST:
-                    PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(new IdentityResponse(Guid));
+                    PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(new IdentityResponse(Guid,MaxSocketCount));
                     ParallelPacket sendPacket=new ParallelPacket(-1,ParallelPacketType.IDENTITY_RESPONSE,serializer.GetPacketRaw());
                     client.Send(sendPacket.GetPacketRaw());
                     break;

@@ -79,7 +79,7 @@ namespace EpParallelSocketServerSample
         /// <param name="server">server</param>
         /// <param name="ipInfo">connection info</param>
         /// <returns>the socket callback interface</returns>
-        public IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo)
+        public IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount)
         {
             return this;
         }

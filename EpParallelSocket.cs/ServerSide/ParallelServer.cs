@@ -21,6 +21,11 @@ namespace EpParallelSocket.cs
         private String m_port = ParallelSocketConf.DEFAULT_PORT;
 
         /// <summary>
+        /// maximum socket count
+        /// </summary>
+        private int m_maxSocketCount = SocketCount.Infinite;
+
+        /// <summary>
         /// receive type
         /// </summary>
         private ReceiveType m_receiveType = ReceiveType.SEQUENTIAL;
@@ -145,6 +150,27 @@ namespace EpParallelSocket.cs
         }
 
         /// <summary>
+        /// maximum socket count property
+        /// </summary>
+        public int MaxSocketCount
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_maxSocketCount;
+                }
+            }
+            set
+            {
+                lock (m_generalLock)
+                {
+                    m_maxSocketCount = value;
+                }
+            }
+        }
+
+        /// <summary>
         /// Callback Exception class
         /// </summary>
         private class CallbackException : Exception
@@ -188,13 +214,14 @@ namespace EpParallelSocket.cs
                     CallBackObj = m_serverOps.CallBackObj;
                     Port = m_serverOps.Port;
                     ReceiveType = m_serverOps.ReceiveType;
+                    MaxSocketCount = m_serverOps.MaxSocketCount;
 
                     if (Port == null || Port.Length == 0)
                     {
                         Port = ServerConf.DEFAULT_PORT;
                     }
                     m_socketMap.Clear();
-                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port,true);
+                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port, true, MaxSocketCount);
                     m_listener.StartServer(listenerOps);
                 }
 
@@ -391,8 +418,9 @@ namespace EpParallelSocket.cs
             {
                 case ParallelPacketType.IDENTITY_RESPONSE:
                     PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(receivedParallelPacket.GetPacketRaw(),receivedParallelPacket.GetHeaderSize(),receivedParallelPacket.GetDataByteSize());
-
-                    Guid guid = serializer.GetPacket().m_guid;
+                    IdentityResponse response = serializer.GetPacket();
+                    Guid guid = response.m_guid;
+                    int streamCount = response.m_streamCount;
                     lock (m_listLock)
                     {
                         if (m_socketMap.ContainsKey(guid))
@@ -401,7 +429,7 @@ namespace EpParallelSocket.cs
                         }
                         else
                         {
-                            IParallelSocketCallback socketCallback = CallBackObj.OnAccept(this, socket.IPInfo);
+                            IParallelSocketCallback socketCallback = CallBackObj.OnAccept(this, socket.IPInfo, streamCount);
                             if (socketCallback != null)
                             {
                                 // Create new Parallel Socket

@@ -136,6 +136,11 @@ namespace EpParallelSocket.cs
         private volatile bool m_isConnected = false;
 
         /// <summary>
+        /// number of connection tried
+        /// </summary>
+        private int m_curConnectionTry = 0;
+
+        /// <summary>
         /// send ready event
         /// </summary>
         private EventEx m_sendReadyEvent = new EventEx(false, EventResetMode.ManualReset);
@@ -400,6 +405,8 @@ namespace EpParallelSocket.cs
 
                     m_curPacketSequence = 0;
                     m_clientSet.Clear();
+                    m_curConnectionTry = 0;
+
 
                     lock (m_sendLock)
                     {
@@ -506,21 +513,6 @@ namespace EpParallelSocket.cs
         /// <param name="ops">option for client</param>
         public void Connect(ParallelClientOps ops)
         {
-            if (IsConnectionAlive)
-            {
-                ConnectStatus status = ConnectStatus.FAIL_ALREADY_CONNECTED;
-                if (ops.CallBackObj != null)
-                {
-                    Task t = new Task(delegate()
-                    {
-                        ops.CallBackObj.OnConnected(this, status);
-                    });
-                    t.Start();
-
-                }
-                return;
-            }
-
             if (ops == null)
                 ops = ParallelClientOps.defaultClientOps;
             if (ops.CallBackObj == null)
@@ -622,6 +614,10 @@ namespace EpParallelSocket.cs
         /// <param name="status">connection status</param>
         public void OnConnected(INetworkClient client, ConnectStatus status)
         {
+            lock (m_generalLock)
+            {
+                m_curConnectionTry++;
+            }
             if (status == ConnectStatus.SUCCESS)
             {
                 lock (m_generalLock)
@@ -638,10 +634,29 @@ namespace EpParallelSocket.cs
                             CallBackObj.OnConnected(this, status);
                         });
                         t.Start();
-                        //CallBackObj.OnConnected(this, status);
                     }
                 }
-               
+
+            }
+            else
+            {
+                lock (m_generalLock)
+                {
+                    // if all sockets failed, trigger IsConnectionAlive to false
+                    if (CurSocketCount==0 && m_curConnectionTry == MaxSocketCount)
+                    {
+                        m_sendReadyEvent.SetEvent();
+                        IsConnectionAlive = false;
+                        if (CallBackObj != null)
+                        {
+                            Task t = new Task(delegate()
+                            {
+                                CallBackObj.OnConnected(this, status);
+                            });
+                            t.Start();
+                        }
+                    }
+                }
             }
             
         }

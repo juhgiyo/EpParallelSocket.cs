@@ -37,7 +37,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// listner
         /// </summary>
-        private IocpTcpServer m_listener = new IocpTcpServer();
+        private IocpTcpServer m_listener;
         /// <summary>
         /// server option
         /// </summary>
@@ -248,6 +248,7 @@ namespace EpParallelSocket.cs
                         Port = ServerConf.DEFAULT_PORT;
                     }
                     m_socketMap.Clear();
+                    m_listener = new IocpTcpServer();
                     ServerOps listenerOps = new ServerOps(this, m_serverOps.Port, true, MaxSocketCount);
                     m_listener.StartServer(listenerOps);
                 }
@@ -267,7 +268,6 @@ namespace EpParallelSocket.cs
                 CallBackObj.OnServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
                 return;
             }
-            CallBackObj.OnServerStarted(this, StartStatus.SUCCESS);
         }
 
         /// <summary>
@@ -299,10 +299,6 @@ namespace EpParallelSocket.cs
                 m_listener.StopServer();
                 m_listener = null;
             }
-            ShutdownAllClient();
-
-            if (CallBackObj != null)
-                CallBackObj.OnServerStopped(this);
         }
 
         /// <summary>

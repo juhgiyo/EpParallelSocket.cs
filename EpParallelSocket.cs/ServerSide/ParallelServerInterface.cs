@@ -58,6 +58,16 @@ namespace EpParallelSocket.cs
             set;
         }
 
+
+        /// <summary>
+        /// room callback object
+        /// </summary>
+        public IParallelRoomCallback RoomCallBackObj
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// port
         /// </summary>
@@ -102,6 +112,7 @@ namespace EpParallelSocket.cs
         public ParallelServerOps()
         {
             CallBackObj = null;
+            RoomCallBackObj = null;
             Port = ParallelSocketConf.DEFAULT_PORT;
             ReceiveType = ReceiveType.SEQUENTIAL;
             MaxSocketCount = SocketCount.Infinite;
@@ -114,10 +125,11 @@ namespace EpParallelSocket.cs
         /// <param name="port">port</param>
         /// <param name="receiveType">receive type</param>
         /// <param name="noDelay">noDelay falg</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite, int streamCountPerSocket = SocketCount.Infinite)
+        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite, int streamCountPerSocket = SocketCount.Infinite, IParallelRoomCallback roomCallBackObj = null)
         {
             this.Port = port;
             this.CallBackObj = callBackObj;
+            this.RoomCallBackObj = roomCallBackObj;
             this.ReceiveType = receiveType;
             MaxSocketCount = socketCount;
             MaxStreamCountPerSocket = streamCountPerSocket;
@@ -145,6 +157,15 @@ namespace EpParallelSocket.cs
         /// callback object
         /// </summary>
         IParallelServerCallback CallBackObj
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// room callback object
+        /// </summary>
+        IParallelRoomCallback RoomCallBackObj
         {
             get;
             set;

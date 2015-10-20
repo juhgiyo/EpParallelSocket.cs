@@ -55,6 +55,12 @@ namespace EpParallelSocket.cs
         /// </summary>
         private string m_roomName;
 
+
+        /// <summary>
+        /// callback object
+        /// </summary>
+        private IParallelRoomCallback m_callBackObj;
+
         /// <summary>
         /// general lock
         /// </summary>
@@ -65,7 +71,9 @@ namespace EpParallelSocket.cs
         /// </summary>
         private Object m_listLock = new Object();
 
-
+        /// <summary>
+        /// Room name property
+        /// </summary>
         public string RoomName
         {
             get
@@ -75,14 +83,54 @@ namespace EpParallelSocket.cs
                     return m_roomName;
                 }
             }
+            private set
+            {
+                lock (m_generalLock)
+                {
+                    m_roomName = value;
+                }
+            }
+
         }
+
+
+        /// <summary>
+        /// Callback Object property
+        /// </summary>
+        public IParallelRoomCallback CallBackObj
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_callBackObj;
+                }
+            }
+            set
+            {
+                lock (m_generalLock)
+                {
+                    m_callBackObj = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="roomName">name of the room</param>
-        public ParallelRoom(string roomName)
+        public ParallelRoom(string roomName,IParallelRoomCallback callbackObj=null)
         {
-            m_roomName = roomName;
+            RoomName = roomName;
+            CallBackObj = callbackObj;
+            if (CallBackObj != null)
+            {
+                Task t = new Task(delegate()
+                {
+                    CallBackObj.OnCreated(this);
+                });
+                t.Start();
+            }
         }
 
         public void AddSocket(IParallelSocket socket)
@@ -90,6 +138,14 @@ namespace EpParallelSocket.cs
             lock (m_listLock)
             {
                 m_socketList.Add(socket);
+            }
+            if (CallBackObj != null)
+            {
+                Task t = new Task(delegate()
+                {
+                    CallBackObj.OnJoin(this, socket);
+                });
+                t.Start();
             }
         }
 
@@ -108,13 +164,21 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Detach the given client from the server management
         /// </summary>
-        /// <param name="clientSocket">the client to detach</param>
+        /// <param name="socket">the client to detach</param>
         /// <returns>the number of socket in the room</returns>
-        public int DetachClient(IParallelSocket clientSocket)
+        public int DetachClient(IParallelSocket socket)
         {
             lock (m_listLock)
             {
-                m_socketList.Remove(clientSocket);
+                m_socketList.Remove(socket);
+                if (CallBackObj != null)
+                {
+                    Task t = new Task(delegate()
+                    {
+                        CallBackObj.OnLeave(this, socket);
+                    });
+                    t.Start();
+                }
                 return m_socketList.Count;
             }
         }
@@ -131,6 +195,14 @@ namespace EpParallelSocket.cs
             foreach (IParallelSocket socket in list)
             {
                 socket.Send(data,offset,dataSize);
+            }
+            if (CallBackObj != null)
+            {
+                Task t = new Task(delegate()
+                {
+                    CallBackObj.OnBroadcast(this,data,offset,dataSize);
+                });
+                t.Start();
             }
         }
 

@@ -86,6 +86,11 @@ namespace EpParallelSocket.cs
         private IParallelServerCallback m_callBackObj = null;
 
         /// <summary>
+        /// room callback object
+        /// </summary>
+        private IParallelRoomCallback m_roomCallBackObj = null;
+
+        /// <summary>
         /// general lock
         /// </summary>
         private Object m_generalLock = new Object();
@@ -204,6 +209,28 @@ namespace EpParallelSocket.cs
             }
         }
 
+
+        /// <summary>
+        /// room callback object
+        /// </summary>
+        public IParallelRoomCallback RoomCallBackObj
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_roomCallBackObj;
+                }
+            }
+            set
+            {
+                lock (m_generalLock)
+                {
+                    m_roomCallBackObj = value;
+                }
+            }
+        }
+
         /// <summary>
         /// maximum socket count property
         /// </summary>
@@ -288,6 +315,7 @@ namespace EpParallelSocket.cs
                     }
 
                     CallBackObj = m_serverOps.CallBackObj;
+                    RoomCallBackObj = m_serverOps.RoomCallBackObj;
                     Port = m_serverOps.Port;
                     ReceiveType = m_serverOps.ReceiveType;
                     MaxSocketCount = m_serverOps.MaxSocketCount;
@@ -622,7 +650,7 @@ namespace EpParallelSocket.cs
                 }
                 else
                 {
-                    curRoom = new ParallelRoom(roomName); ;
+                    curRoom = new ParallelRoom(roomName,RoomCallBackObj);
                     m_roomMap[roomName] = curRoom;
                 }
                 curRoom.AddSocket(socket);

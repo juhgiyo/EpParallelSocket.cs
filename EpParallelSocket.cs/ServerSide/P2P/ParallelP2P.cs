@@ -133,7 +133,7 @@ namespace EpParallelSocket.cs
         {
             if (!Paired)
             {
-                if (socket1 != null && socket2 != null && socket1.IsConnectionAlive && socket2.IsConnectionAlive)
+                if (socket1 != null && socket2 != null && socket1!=socket2 && socket1.IsConnectionAlive && socket2.IsConnectionAlive)
                 {
                     lock (m_generalLock)
                     {

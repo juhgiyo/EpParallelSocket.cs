@@ -116,6 +116,86 @@ namespace EpParallelSocket.cs
         /// </summary>
         private Dictionary<string, ParallelRoom> m_roomMap = new Dictionary<string, ParallelRoom>();
 
+        /// <summary>
+        /// OnServerStarted event
+        /// </summary>
+        OnParallelServerStartedDelegate m_onServerStarted = delegate { };
+        /// <summary>
+        ///  OnAccept event
+        /// </summary>
+        OnParallelServerAcceptDelegate m_onAccept = delegate { };
+        /// <summary>
+        /// OnserverStopped event
+        /// </summary>
+        OnParallelServerStoppedDelegate m_onServerStopped = delegate { };
+
+        /// <summary>
+        /// OnServerStarted event
+        /// </summary>
+        public OnParallelServerStartedDelegate OnParallelServerStarted
+        {
+            get
+            {
+                return m_onServerStarted;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onServerStarted = delegate { };
+                    if (CallBackObj != null)
+                        m_onServerStarted += CallBackObj.OnParallelServerStarted;
+                }
+                else
+                {
+                    m_onServerStarted = CallBackObj != null && CallBackObj.OnParallelServerStarted != value ? CallBackObj.OnParallelServerStarted + (value - CallBackObj.OnParallelServerStarted) : value;
+                }
+            }
+        }
+        /// <summary>
+        ///  OnAccept event
+        /// </summary>
+        public OnParallelServerAcceptDelegate OnParallelServerAccept
+        {
+            get
+            {
+                return m_onAccept;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onAccept = delegate { };
+                }
+                else
+                {
+                    m_onAccept = value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnserverStopped event
+        /// </summary>
+        public OnParallelServerStoppedDelegate OnParallelServerStopped
+        {
+            get
+            {
+                return m_onServerStopped;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onServerStopped = delegate { };
+                    if (CallBackObj != null)
+                        m_onServerStarted += CallBackObj.OnParallelServerStarted;
+                }
+                else
+                {
+                    m_onServerStopped = CallBackObj != null && CallBackObj.OnParallelServerStopped != value ? CallBackObj.OnParallelServerStopped + (value - CallBackObj.OnParallelServerStopped) : value;
+                }
+            }
+        }
 
         /// <summary>
         /// Default constructor
@@ -204,7 +284,17 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
+                    if (m_callBackObj != null)
+                    {
+                        m_onServerStarted -= m_callBackObj.OnParallelServerStarted;
+                        m_onServerStopped -= m_callBackObj.OnParallelServerStopped;
+                    }
                     m_callBackObj = value;
+                    if (m_callBackObj != null)
+                    {
+                        m_onServerStarted += m_callBackObj.OnParallelServerStarted;
+                        m_onServerStopped += m_callBackObj.OnParallelServerStopped;
+                    }
                 }
             }
         }
@@ -342,8 +432,7 @@ namespace EpParallelSocket.cs
             }
             catch (CallbackException)
             {
-                if(CallBackObj!=null)
-                    CallBackObj.OnServerStarted(this, status);
+                OnParallelServerStarted(this, status);
                 return;
             }
             catch (Exception ex)
@@ -352,8 +441,7 @@ namespace EpParallelSocket.cs
                 if (m_listener != null)
                     m_listener.StopServer();
                 m_listener = null;
-                if (CallBackObj != null)
-                    CallBackObj.OnServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
+                OnParallelServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
                 return;
             }
         }
@@ -484,8 +572,7 @@ namespace EpParallelSocket.cs
         /// <param name="status">start status</param>
         public void OnServerStarted(INetworkServer server, StartStatus status)
         {
-            if (CallBackObj != null)
-                CallBackObj.OnServerStarted(this, status);
+            OnParallelServerStarted(this, status);
         }
         /// <summary>
         /// Accept callback
@@ -503,8 +590,7 @@ namespace EpParallelSocket.cs
         /// <param name="server">server</param>
         public void OnServerStopped(INetworkServer server)
         {
-            if (CallBackObj != null)
-                CallBackObj.OnServerStopped(this);
+            OnParallelServerStopped(this);
         }
 
 
@@ -547,7 +633,7 @@ namespace EpParallelSocket.cs
                                 socket.Disconnect();
                                 return;
                             }
-                            IParallelSocketCallback socketCallback = CallBackObj.OnAccept(this, socket.IPInfo, streamCount);
+                            IParallelSocketCallback socketCallback = CallBackObj.OnParallelServerAccept(this, socket.IPInfo, streamCount);
                             if (socketCallback != null)
                             {
                                 // Create new Parallel Socket
@@ -555,6 +641,7 @@ namespace EpParallelSocket.cs
                                 parallelSocket.CallBackObj = socketCallback;
                                 parallelSocket.Start();
                                 m_socketMap[guid] = parallelSocket;
+                                OnParallelServerAccept(this, socket.IPInfo, streamCount);
                             }
                             else
                             {

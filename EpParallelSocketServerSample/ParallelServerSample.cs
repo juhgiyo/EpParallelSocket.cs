@@ -64,7 +64,7 @@ namespace EpParallelSocketServerSample
         /// </summary>
         /// <param name="server">server</param>
         /// <param name="status">start status</param>
-        public void OnServerStarted(IParallelServer server, StartStatus status)
+        public void OnParallelServerStarted(IParallelServer server, StartStatus status)
         {
             if (status == StartStatus.SUCCESS || status == StartStatus.FAIL_ALREADY_STARTED)
             {
@@ -79,7 +79,7 @@ namespace EpParallelSocketServerSample
         /// <param name="server">server</param>
         /// <param name="ipInfo">connection info</param>
         /// <returns>the socket callback interface</returns>
-        public IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount)
+        public IParallelSocketCallback OnParallelServerAccept(IParallelServer server, IPInfo ipInfo, int streamCount)
         {
             return this;
         }
@@ -87,7 +87,7 @@ namespace EpParallelSocketServerSample
         /// Server stopped callback
         /// </summary>
         /// <param name="server">server</param>
-        public void OnServerStopped(IParallelServer server)
+        public void OnParallelServerStopped(IParallelServer server)
         {
             Debug.Print("Server stopped");
             ChangeTitle(false);
@@ -97,7 +97,7 @@ namespace EpParallelSocketServerSample
         /// NewConnection callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        public void OnNewConnection(IParallelSocket socket)
+        public void OnParallelSocketNewConnection(IParallelSocket socket)
         {
             Debug.Print("socket connected");
         }
@@ -107,7 +107,7 @@ namespace EpParallelSocketServerSample
         /// </summary>
         /// <param name="socket">client socket</param>
         /// <param name="receivedPacket">received packet</param>
-        public void OnReceived(IParallelSocket socket, ParallelPacket receivedPacket)
+        public void OnParallelSocketReceived(IParallelSocket socket, ParallelPacket receivedPacket)
         {
              string recvString=ASCIIEncoding.ASCII.GetString(receivedPacket.GetData().ToArray());
              Debug.Print("Received [" + receivedPacket.GetPacketID() + "] " + recvString);
@@ -120,7 +120,7 @@ namespace EpParallelSocketServerSample
         /// <param name="socket">client socket</param>
         /// <param name="status">stend status</param>
         /// <param name="sentPacket">sent packet</param>
-        public void OnSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket)
+        public void OnParallelSocketSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket)
         {
             string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.GetData().ToArray());
             Debug.Print("Sent [" + sentPacket.GetPacketID() + "] " + sentString);
@@ -130,7 +130,7 @@ namespace EpParallelSocketServerSample
         /// Disconnect callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        public void OnDisconnect(IParallelSocket socket)
+        public void OnParallelSocketDisconnect(IParallelSocket socket)
         {
             Debug.Print("socket disconnected");
         }

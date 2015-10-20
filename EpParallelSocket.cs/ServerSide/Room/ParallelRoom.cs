@@ -95,6 +95,144 @@ namespace EpParallelSocket.cs
 
 
         /// <summary>
+        /// OnCreated event
+        /// </summary>
+        OnParallelRoomCreatedDelegate m_onCreated = delegate { };
+        /// <summary>
+        /// OnJoin event
+        /// </summary>
+        OnParallelRoomJoinDelegate m_onJoin = delegate { };
+        /// <summary>
+        /// OnLeave event
+        /// </summary>
+        OnParallelRoomLeaveDelegate m_onLeave = delegate { };
+        /// <summary>
+        /// OnBroadcast event
+        /// </summary>
+        OnParallelRoomBroadcastDelegate m_onBroadcast = delegate { };
+        /// <summary>
+        /// OnDestroy event
+        /// </summary>
+        OnParallelRoomDestroyDelegate m_onDestroy = delegate { };
+
+        /// <summary>
+        /// OnCreated event
+        /// </summary>
+        public OnParallelRoomCreatedDelegate OnParallelRoomCreated
+        {
+            get
+            {
+                return m_onCreated;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onCreated = delegate { };
+                    if (CallBackObj != null)
+                        m_onCreated += CallBackObj.OnParallelRoomCreated;
+                }
+                else
+                {
+                    m_onCreated = CallBackObj != null && CallBackObj.OnParallelRoomCreated != value ? CallBackObj.OnParallelRoomCreated + (value - CallBackObj.OnParallelRoomCreated) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnJoin event
+        /// </summary>
+        public OnParallelRoomJoinDelegate OnParallelRoomJoin
+        {
+            get
+            {
+                return m_onJoin;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onJoin = delegate { };
+                    if (CallBackObj != null)
+                        m_onJoin += CallBackObj.OnParallelRoomJoin;
+                }
+                else
+                {
+                    m_onJoin = CallBackObj != null && CallBackObj.OnParallelRoomJoin != value ? CallBackObj.OnParallelRoomJoin + (value - CallBackObj.OnParallelRoomJoin) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnLeave event
+        /// </summary>
+        public OnParallelRoomLeaveDelegate OnParallelRoomLeave
+        {
+            get
+            {
+                return m_onLeave;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onLeave = delegate { };
+                    if (CallBackObj != null)
+                        m_onLeave += CallBackObj.OnParallelRoomLeave;
+                }
+                else
+                {
+                    m_onLeave = CallBackObj != null && CallBackObj.OnParallelRoomLeave != value ? CallBackObj.OnParallelRoomLeave + (value - CallBackObj.OnParallelRoomLeave) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnBroadcast event
+        /// </summary>
+        public OnParallelRoomBroadcastDelegate OnParallelRoomBroadcast
+        {
+            get
+            {
+                return m_onBroadcast;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onBroadcast = delegate { };
+                    if (CallBackObj != null)
+                        m_onBroadcast += CallBackObj.OnParallelRoomBroadcast;
+                }
+                else
+                {
+                    m_onBroadcast = CallBackObj != null && CallBackObj.OnParallelRoomBroadcast != value ? CallBackObj.OnParallelRoomBroadcast + (value - CallBackObj.OnParallelRoomBroadcast) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnDestroy event
+        /// </summary>
+        public OnParallelRoomDestroyDelegate OnParallelRoomDestroy
+        {
+            get
+            {
+                return m_onDestroy;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onDestroy = delegate { };
+                    if (CallBackObj != null)
+                        m_onDestroy += CallBackObj.OnParallelRoomDestroy;
+                }
+                else
+                {
+                    m_onDestroy = CallBackObj != null && CallBackObj.OnParallelRoomDestroy != value ? CallBackObj.OnParallelRoomDestroy + (value - CallBackObj.OnParallelRoomDestroy) : value;
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Callback Object property
         /// </summary>
         public IParallelRoomCallback CallBackObj
@@ -110,7 +248,23 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
+                    if (m_callBackObj != null)
+                    {
+                        m_onCreated -= m_callBackObj.OnParallelRoomCreated;
+                        m_onJoin -= m_callBackObj.OnParallelRoomJoin;
+                        m_onLeave -= m_callBackObj.OnParallelRoomLeave;
+                        m_onBroadcast -= m_callBackObj.OnParallelRoomBroadcast;
+                        m_onDestroy -= m_callBackObj.OnParallelRoomDestroy;
+                    }
                     m_callBackObj = value;
+                    if (m_callBackObj != null)
+                    {
+                        m_onCreated += m_callBackObj.OnParallelRoomCreated;
+                        m_onJoin += m_callBackObj.OnParallelRoomJoin;
+                        m_onLeave += m_callBackObj.OnParallelRoomLeave;
+                        m_onBroadcast += m_callBackObj.OnParallelRoomBroadcast;
+                        m_onDestroy += m_callBackObj.OnParallelRoomDestroy;
+                    }
                 }
             }
         }
@@ -123,14 +277,12 @@ namespace EpParallelSocket.cs
         {
             RoomName = roomName;
             CallBackObj = callbackObj;
-            if (CallBackObj != null)
+            Task t = new Task(delegate()
             {
-                Task t = new Task(delegate()
-                {
-                    CallBackObj.OnCreated(this);
-                });
-                t.Start();
-            }
+                OnParallelRoomCreated(this);
+            });
+            t.Start();
+
         }
 
         public void AddSocket(IParallelSocket socket)
@@ -139,14 +291,13 @@ namespace EpParallelSocket.cs
             {
                 m_socketList.Add(socket);
             }
-            if (CallBackObj != null)
+            
+            Task t = new Task(delegate()
             {
-                Task t = new Task(delegate()
-                {
-                    CallBackObj.OnJoin(this, socket);
-                });
-                t.Start();
-            }
+                OnParallelRoomJoin(this, socket);
+            });
+            t.Start();
+            
         }
 
         /// <summary>
@@ -171,14 +322,13 @@ namespace EpParallelSocket.cs
             lock (m_listLock)
             {
                 m_socketList.Remove(socket);
-                if (CallBackObj != null)
+                
+                Task t = new Task(delegate()
                 {
-                    Task t = new Task(delegate()
-                    {
-                        CallBackObj.OnLeave(this, socket);
-                    });
-                    t.Start();
-                }
+                    OnParallelRoomLeave(this, socket);
+                });
+                t.Start();
+                
                 return m_socketList.Count;
             }
         }
@@ -196,14 +346,13 @@ namespace EpParallelSocket.cs
             {
                 socket.Send(data,offset,dataSize);
             }
-            if (CallBackObj != null)
+            
+            Task t = new Task(delegate()
             {
-                Task t = new Task(delegate()
-                {
-                    CallBackObj.OnBroadcast(this,data,offset,dataSize);
-                });
-                t.Start();
-            }
+                OnParallelRoomBroadcast(this, data, offset, dataSize);
+            });
+            t.Start();
+            
         }
 
         /// <summary>

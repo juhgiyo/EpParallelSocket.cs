@@ -275,8 +275,36 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         void Broadcast(string roomName, byte[] data);
 
+
+        /// <summary>
+        /// OnServerStarted event
+        /// </summary>
+        OnParallelServerStartedDelegate OnParallelServerStarted
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        ///  OnAccept event
+        /// </summary>
+        OnParallelServerAcceptDelegate OnParallelServerAccept
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnserverStopped event
+        /// </summary>
+        OnParallelServerStoppedDelegate OnParallelServerStopped
+        {
+            get;
+            set;
+        }
     }
 
+    public delegate void OnParallelServerStartedDelegate(IParallelServer server, StartStatus status);
+    public delegate void OnParallelServerAcceptDelegate(IParallelServer server, IPInfo ipInfo, int streamCount);
+    public delegate void OnParallelServerStoppedDelegate(IParallelServer server);
 
     /// <summary>
     /// Parallel Server callback interface
@@ -288,7 +316,7 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="server">server</param>
         /// <param name="status">start status</param>
-        void OnServerStarted(IParallelServer server, StartStatus status);
+        void OnParallelServerStarted(IParallelServer server, StartStatus status);
         /// <summary>
         /// Accept callback
         /// </summary>
@@ -296,12 +324,12 @@ namespace EpParallelSocket.cs
         /// <param name="ipInfo">connection info</param>
         /// <param name="streamCount">stream count for the parallel socket</param>
         /// <returns>the socket callback interface</returns>
-        IParallelSocketCallback OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount);
+        IParallelSocketCallback OnParallelServerAccept(IParallelServer server, IPInfo ipInfo, int streamCount);
         /// <summary>
         /// Server stopped callback
         /// </summary>
         /// <param name="server">server</param>
-        void OnServerStopped(IParallelServer server);
+        void OnParallelServerStopped(IParallelServer server);
     };
 
 
@@ -384,6 +412,39 @@ namespace EpParallelSocket.cs
 
 
         /// <summary>
+        /// OnNewConnected event
+        /// </summary>
+        OnParallelSocketNewConnectionDelegate OnParallelSocketNewConnection
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnRecevied event
+        /// </summary>
+        OnParallelSocketReceivedDelegate OnParallelSocketReceived
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnSent event
+        /// </summary>
+        OnParallelSocketSentDelegate OnParallelSocketSent
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnDisconnect event
+        /// </summary>
+        OnParallelSocketDisconnectDelegate OnParallelSocketDisconnect
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Return the room instance of given room name
         /// </summary>
         /// <param name="roomName">room name</param>
@@ -431,6 +492,11 @@ namespace EpParallelSocket.cs
     }
 
 
+    public delegate void OnParallelSocketNewConnectionDelegate(IParallelSocket socket);
+    public delegate void OnParallelSocketReceivedDelegate(IParallelSocket socket, ParallelPacket receivedPacket);
+    public delegate void OnParallelSocketSentDelegate(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket);
+    public delegate void OnParallelSocketDisconnectDelegate(IParallelSocket socket);
+
     /// <summary>
     /// Parallel Socket callback interface
     /// </summary>
@@ -440,14 +506,14 @@ namespace EpParallelSocket.cs
         /// NewConnection callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        void OnNewConnection(IParallelSocket socket);
+        void OnParallelSocketNewConnection(IParallelSocket socket);
 
         /// <summary>
         /// Receive callback
         /// </summary>
         /// <param name="socket">client socket</param>
         /// <param name="receivedPacket">received packet</param>
-        void OnReceived(IParallelSocket socket, ParallelPacket receivedPacket);
+        void OnParallelSocketReceived(IParallelSocket socket, ParallelPacket receivedPacket);
 
         /// <summary>
         /// Send callback
@@ -455,12 +521,12 @@ namespace EpParallelSocket.cs
         /// <param name="socket">client socket</param>
         /// <param name="status">stend status</param>
         /// <param name="sentPacket">sent packet</param>
-        void OnSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket);
+        void OnParallelSocketSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket);
 
         /// <summary>
         /// Disconnect callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        void OnDisconnect(IParallelSocket socket);
+        void OnParallelSocketDisconnect(IParallelSocket socket);
     };
 }

@@ -84,7 +84,55 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         void Broadcast(byte[] data);
 
+
+        /// <summary>
+        /// OnCreated event
+        /// </summary>
+        OnParallelRoomCreatedDelegate OnParallelRoomCreated
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnJoin event
+        /// </summary>
+        OnParallelRoomJoinDelegate OnParallelRoomJoin
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnLeave event
+        /// </summary>
+        OnParallelRoomLeaveDelegate OnParallelRoomLeave
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnBroadcast event
+        /// </summary>
+        OnParallelRoomBroadcastDelegate OnParallelRoomBroadcast
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// OnDestroy event
+        /// </summary>
+        OnParallelRoomDestroyDelegate OnParallelRoomDestroy
+        {
+            get;
+            set;
+        }
     }
+
+
+    public delegate void OnParallelRoomCreatedDelegate(IParallelRoom room);
+    public delegate void OnParallelRoomJoinDelegate(IParallelRoom room, IParallelSocket socket);
+    public delegate void OnParallelRoomLeaveDelegate(IParallelRoom room, IParallelSocket socket);
+    public delegate void OnParallelRoomBroadcastDelegate(IParallelRoom room, byte[] data, int offset, int dataSize);
+    public delegate void OnParallelRoomDestroyDelegate(IParallelRoom room);
 
     public interface IParallelRoomCallback
     {
@@ -92,21 +140,21 @@ namespace EpParallelSocket.cs
         /// Room created callback
         /// </summary>
         /// <param name="room">room</param>
-        void OnCreated(IParallelRoom room);
+        void OnParallelRoomCreated(IParallelRoom room);
 
         /// <summary>
         /// Join callback
         /// </summary>
         /// <param name="room">room</param>
         /// <param name="socket">socket</param>
-        void OnJoin(IParallelRoom room, IParallelSocket socket);
+        void OnParallelRoomJoin(IParallelRoom room, IParallelSocket socket);
 
         /// <summary>
         /// Leave callback
         /// </summary>
         /// <param name="room">room</param>
         /// <param name="socket">socket</param>
-        void OnLeave(IParallelRoom room, IParallelSocket socket);
+        void OnParallelRoomLeave(IParallelRoom room, IParallelSocket socket);
 
         /// <summary>
         /// Broadcast callback
@@ -115,14 +163,14 @@ namespace EpParallelSocket.cs
         /// <param name="data">data</param>
         /// <param name="offset">offset of data to start</param>
         /// <param name="dataSize">datasize</param>
-        void OnBroadcast(IParallelRoom room, byte[] data, int offset, int dataSize);
+        void OnParallelRoomBroadcast(IParallelRoom room, byte[] data, int offset, int dataSize);
 
 
         /// <summary>
         /// Room destroyed callback
         /// </summary>
         /// <param name="room"></param>
-        void OnDestroy(IParallelRoom room);
+        void OnParallelRoomDestroy(IParallelRoom room);
 
 
 

@@ -158,7 +158,119 @@ namespace EpParallelSocket.cs
         /// received packet queue
         /// </summary>
         private PQueue<ParallelPacket> m_receivedQueue = new PQueue<ParallelPacket>();
-        
+
+
+
+        /// <summary>
+        /// OnNewConnected event
+        /// </summary>
+        OnParallelSocketNewConnectionDelegate m_onNewConnection = delegate { };
+        /// <summary>
+        /// OnRecevied event
+        /// </summary>
+        OnParallelSocketReceivedDelegate m_onReceived = delegate { };
+        /// <summary>
+        /// OnSent event
+        /// </summary>
+        OnParallelSocketSentDelegate m_onSent = delegate { };
+        /// <summary>
+        /// OnDisconnect event
+        /// </summary>
+        OnParallelSocketDisconnectDelegate m_onDisconnect = delegate { };
+
+        /// <summary>
+        /// OnNewConnected event
+        /// </summary>
+        public OnParallelSocketNewConnectionDelegate OnParallelSocketNewConnection
+        {
+            get
+            {
+                return m_onNewConnection;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onNewConnection = delegate { };
+                    if (CallBackObj != null)
+                        m_onNewConnection += CallBackObj.OnParallelSocketNewConnection;
+                }
+                else
+                {
+                    m_onNewConnection = CallBackObj != null && CallBackObj.OnParallelSocketNewConnection != value ? CallBackObj.OnParallelSocketNewConnection + (value - CallBackObj.OnParallelSocketNewConnection) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnRecevied event
+        /// </summary>
+        public OnParallelSocketReceivedDelegate OnParallelSocketReceived
+        {
+            get
+            {
+                return m_onReceived;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onReceived = delegate { };
+                    if (CallBackObj != null)
+                        m_onReceived += CallBackObj.OnParallelSocketReceived;
+                }
+                else
+                {
+                    m_onReceived = CallBackObj != null && CallBackObj.OnParallelSocketReceived != value ? CallBackObj.OnParallelSocketReceived + (value - CallBackObj.OnParallelSocketReceived) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnSent event
+        /// </summary>
+        public OnParallelSocketSentDelegate OnParallelSocketSent
+        {
+            get
+            {
+                return m_onSent;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onSent = delegate { };
+                    if (CallBackObj != null)
+                        m_onSent += CallBackObj.OnParallelSocketSent;
+                }
+                else
+                {
+                    m_onSent = CallBackObj != null && CallBackObj.OnParallelSocketSent != value ? CallBackObj.OnParallelSocketSent + (value - CallBackObj.OnParallelSocketSent) : value;
+                }
+            }
+        }
+        /// <summary>
+        /// OnDisconnect event
+        /// </summary>
+        public OnParallelSocketDisconnectDelegate OnParallelSocketDisconnect
+        {
+            get
+            {
+                return m_onDisconnect;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onDisconnect = delegate { };
+                    if (CallBackObj != null)
+                        m_onDisconnect += CallBackObj.OnParallelSocketDisconnect;
+                }
+                else
+                {
+                    m_onDisconnect = CallBackObj != null && CallBackObj.OnParallelSocketDisconnect != value ? CallBackObj.OnParallelSocketDisconnect + (value - CallBackObj.OnParallelSocketDisconnect) : value;
+                }
+            }
+        }
+
         /// <summary>
         /// room list
         /// </summary>
@@ -240,7 +352,21 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
+                    if (m_callBackObj != null)
+                    {
+                        m_onNewConnection -= m_callBackObj.OnParallelSocketNewConnection;
+                        m_onSent -= m_callBackObj.OnParallelSocketSent;
+                        m_onReceived -= m_callBackObj.OnParallelSocketReceived;
+                        m_onDisconnect -= m_callBackObj.OnParallelSocketDisconnect;
+                    }
                     m_callBackObj = value;
+                    if (m_callBackObj != null)
+                    {
+                        m_onNewConnection += m_callBackObj.OnParallelSocketNewConnection;
+                        m_onSent += m_callBackObj.OnParallelSocketSent;
+                        m_onReceived += m_callBackObj.OnParallelSocketReceived;
+                        m_onDisconnect += m_callBackObj.OnParallelSocketDisconnect;
+                    }
                 }
             }
         }
@@ -331,8 +457,7 @@ namespace EpParallelSocket.cs
         protected override void execute()
         {
             IsConnectionAlive = true;
-            if (CallBackObj != null)
-                CallBackObj.OnNewConnection(this);
+            OnParallelSocketNewConnection(this);
             startSend();
         }
 
@@ -534,15 +659,7 @@ namespace EpParallelSocket.cs
                 case ParallelPacketType.DATA:
                     if (ReceiveType == ReceiveType.BURST)
                     {
-                        if (CallBackObj != null)
-                        {
-//                             Task t = new Task(delegate()
-//                             {
-//                                 CallBackObj.OnReceived(this, receivedParallelPacket);
-//                             });
-//                             t.Start();
-                            CallBackObj.OnReceived(this, receivedParallelPacket);
-                        }
+                        OnParallelSocketReceived(this, receivedParallelPacket);
                     }
                     else if (ReceiveType == ReceiveType.SEQUENTIAL)
                     {
@@ -554,15 +671,7 @@ namespace EpParallelSocket.cs
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
                                 if (curPacket.GetPacketID() != -1)
                                     m_curReceivedPacketId = curPacket.GetPacketID();
-                                if (CallBackObj != null)
-                                {
-//                                     Task t = new Task(delegate()
-//                                     {
-//                                         CallBackObj.OnReceived(this, curPacket);
-//                                     });
-//                                     t.Start();
-                                    CallBackObj.OnReceived(this, curPacket);
-                                }
+                                OnParallelSocketReceived(this, curPacket);
                             }
                         }
                     }
@@ -598,15 +707,12 @@ namespace EpParallelSocket.cs
                     if (m_pendingClientSet.Count > 0 && (m_errorPacketSet.Count > 0 || m_packetQueue.Count > 0))
                         m_sendReadyEvent.SetEvent();
                 }
-                if (CallBackObj != null)
+                
+                Task t = new Task(delegate()
                 {
-                    Task t = new Task(delegate()
-                    {
-                        CallBackObj.OnSent(this, status, sentParallelPacket);
-                    });
-                    t.Start();
-                    //CallBackObj.OnSent(this, status, sentParallelPacket);
-                }
+                    OnParallelSocketSent(this, status, sentParallelPacket);
+                });
+                t.Start();
 
             }
         }
@@ -653,14 +759,12 @@ namespace EpParallelSocket.cs
                         m_roomMap.Clear();
                     }
 
-                    if (CallBackObj != null)
+                    Task t = new Task(delegate()
                     {
-                        Task t = new Task(delegate()
-                        {
-                            CallBackObj.OnDisconnect(this);
-                        });
-                        t.Start();
-                    }
+                        OnParallelSocketDisconnect(this);
+                    });
+                    t.Start();
+                    
                 }
             }
         }

@@ -46,7 +46,7 @@ namespace EpParallelSocketClientSample
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="status">connection status</param>
-        public void OnConnected(IParallelClient client, ConnectStatus status)
+        public void OnParallelClientConnected(IParallelClient client, ConnectStatus status)
         {
             if (status == ConnectStatus.SUCCESS)
             {
@@ -74,7 +74,7 @@ namespace EpParallelSocketClientSample
         /// </summary>
         /// <param name="client">client</param>
         /// <param name="receivedPacket">received packet</param>
-        public void OnReceived(IParallelClient client, ParallelPacket receivedPacket)
+        public void OnParallelClientReceived(IParallelClient client, ParallelPacket receivedPacket)
         {
             string recvString=ASCIIEncoding.ASCII.GetString(receivedPacket.GetData().ToArray());
             Debug.Print("Received [" + receivedPacket.GetPacketID() + "] " + recvString);
@@ -86,7 +86,7 @@ namespace EpParallelSocketClientSample
         /// <param name="client">client</param>
         /// <param name="status">send status</param>
         /// <param name="sentPacket">sent packet</param>
-        public void OnSent(IParallelClient client, SendStatus status, ParallelPacket sentPacket)
+        public void OnParallelClientSent(IParallelClient client, SendStatus status, ParallelPacket sentPacket)
         {
             string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.GetData().ToArray());
             Debug.Print("Sent [" + sentPacket.GetPacketID() + "] " + sentString);
@@ -96,7 +96,7 @@ namespace EpParallelSocketClientSample
         /// Disconnect callback
         /// </summary>
         /// <param name="client">client</param>
-        public void OnDisconnect(IParallelClient client)
+        public void OnParallelClientDisconnect(IParallelClient client)
         {
             Debug.Print("Disconnected");
         }

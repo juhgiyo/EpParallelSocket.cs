@@ -63,6 +63,16 @@ namespace EpParallelSocket.cs
             get;
             set;
         }
+
+        /// <summary>
+        /// OnDetached event
+        /// </summary>
+        OnParallelP2PDetachedDelegate OnParallelP2PDetached
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Connect given two socket as p2p
         /// </summary>
@@ -77,6 +87,9 @@ namespace EpParallelSocket.cs
         void DetachPair();
     }
 
+
+    public delegate void OnParallelP2PDetachedDelegate(IParallelP2P p2p, IParallelSocket socket1, IParallelSocket socket2);
+
     /// <summary>
     /// P2P callback interface
     /// </summary>
@@ -88,6 +101,6 @@ namespace EpParallelSocket.cs
         /// <param name="p2p">p2p instance</param>
         /// <param name="socket1">first socket</param>
         /// <param name="socket2">second socket</param>
-        void OnDetached(IParallelP2P p2p, IParallelSocket socket1, IParallelSocket socket2);
+        void OnParallelP2PDetached(IParallelP2P p2p, IParallelSocket socket1, IParallelSocket socket2);
     }
 }

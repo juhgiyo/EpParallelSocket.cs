@@ -37,6 +37,35 @@ namespace EpParallelSocket.cs
         IParallelP2PCallback m_callBackObj;
 
         /// <summary>
+        /// OnDetached event
+        /// </summary>
+        OnParallelP2PDetachedDelegate m_onDetached = delegate { };
+
+        /// <summary>
+        /// OnDetached event
+        /// </summary>
+        public OnParallelP2PDetachedDelegate OnParallelP2PDetached
+        {
+            get
+            {
+                return m_onDetached;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    m_onDetached = delegate { };
+                    if (CallBackObj != null)
+                        m_onDetached += CallBackObj.OnParallelP2PDetached;
+                }
+                else
+                {
+                    m_onDetached = CallBackObj != null && CallBackObj.OnParallelP2PDetached != value ? CallBackObj.OnParallelP2PDetached + (value - CallBackObj.OnParallelP2PDetached) : value;
+                }
+            }
+        }
+
+        /// <summary>
         /// flag whether P2P is paired
         /// </summary>
         public bool Paired
@@ -73,7 +102,15 @@ namespace EpParallelSocket.cs
             {
                 lock (m_generalLock)
                 {
+                    if (m_callBackObj != null)
+                    {
+                        m_onDetached -= m_callBackObj.OnParallelP2PDetached;
+                    }
                     m_callBackObj = value;
+                    if (m_callBackObj != null)
+                    {
+                        m_onDetached += m_callBackObj.OnParallelP2PDetached;
+                    }
                 }
             }
         }
@@ -128,18 +165,13 @@ namespace EpParallelSocket.cs
                     if (m_socket2 != null)
                         m_socket2.CallBackObj = null;
                     Paired = false;
-                    if (CallBackObj != null)
+                    
+                    Task t = new Task(delegate()
                     {
-                        if (CallBackObj != null)
-                            {
-                                Task t = new Task(delegate()
-                                {
-                                    CallBackObj.OnDetached(this, m_socket1, m_socket2);
-                                });
-                                t.Start();
-                            }
-                 
-                    }
+                        OnParallelP2PDetached(this, m_socket1, m_socket2);
+                    });
+                    t.Start();
+                    
                     m_socket1 = null;
                     m_socket2 = null;
                 }
@@ -150,7 +182,7 @@ namespace EpParallelSocket.cs
         /// NewConnection callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        public void OnNewConnection(IParallelSocket socket)
+        public void OnParallelSocketNewConnection(IParallelSocket socket)
         {
             // Will never get called
         }
@@ -160,7 +192,7 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <param name="socket">client socket</param>
         /// <param name="receivedPacket">received packet</param>
-        public void OnReceived(IParallelSocket socket, ParallelPacket receivedPacket)
+        public void OnParallelSocketReceived(IParallelSocket socket, ParallelPacket receivedPacket)
         {
             lock (m_generalLock)
             {
@@ -181,7 +213,7 @@ namespace EpParallelSocket.cs
         /// <param name="socket">client socket</param>
         /// <param name="status">stend status</param>
         /// <param name="sentPacket">sent packet</param>
-        public void OnSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket)
+        public void OnParallelSocketSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket)
         {
         }
 
@@ -189,7 +221,7 @@ namespace EpParallelSocket.cs
         /// Disconnect callback
         /// </summary>
         /// <param name="socket">client socket</param>
-        public void OnDisconnect(IParallelSocket socket)
+        public void OnParallelSocketDisconnect(IParallelSocket socket)
         {
             DetachPair();
         }

@@ -57,10 +57,23 @@ namespace EpParallelSocket.cs
         /// client socket list lock
         /// </summary>
         private Object m_listLock = new Object();
+
+        /// <summary>
+        /// client socket room lock
+        /// </summary>
+        private Object m_roomLock = new Object();
+
         /// <summary>
         /// client socket list
         /// </summary>
         private Dictionary<Guid, ParallelSocket> m_socketMap = new Dictionary<Guid, ParallelSocket>();
+
+
+        /// <summary>
+        /// room list
+        /// </summary>
+        private Dictionary<string, ParallelRoom> m_roomMap = new Dictionary<string, ParallelRoom>();
+
 
         /// <summary>
         /// Default constructor
@@ -247,7 +260,15 @@ namespace EpParallelSocket.cs
                     {
                         Port = ServerConf.DEFAULT_PORT;
                     }
-                    m_socketMap.Clear();
+                    lock (m_listLock)
+                    {
+                        m_socketMap.Clear();
+                    }
+                    lock (m_roomLock)
+                    {
+                        m_roomMap.Clear();
+                    }          
+
                     m_listener = new IocpTcpServer();
                     ServerOps listenerOps = new ServerOps(this, m_serverOps.Port, true, MaxSocketCount);
                     m_listener.StartServer(listenerOps);
@@ -492,6 +513,131 @@ namespace EpParallelSocket.cs
         /// <param name="socket">client socket</param>
         public void OnDisconnect(INetworkSocket socket)
         {
+        }
+
+
+        /// <summary>
+        /// Return the room instance of given room name
+        /// </summary>
+        /// <param name="roomName">room name</param>
+        /// <returns>the room instance</returns>
+        public IParallelRoom GetRoom(string roomName)
+        {
+            lock (m_roomLock)
+            {
+                if (m_roomMap.ContainsKey(roomName))
+                    return m_roomMap[roomName];
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Return the list of names of the room
+        /// </summary>
+        public List<string> RoomNames
+        {
+            get
+            {
+                lock (m_roomLock)
+                {
+                    return new List<string>(m_roomMap.Keys);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Return the list of rooms
+        /// </summary>
+        public List<IParallelRoom> Rooms
+        {
+            get
+            {
+                lock (m_roomLock)
+                {
+                    return new List<IParallelRoom>(m_roomMap.Values);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Join the room
+        /// </summary>
+        /// <param name="socket">socket</param>
+        /// <param name="roomName">room name</param>
+        /// <returns>the instance of the room</returns>
+        public ParallelRoom Join(IParallelSocket socket, string roomName)
+        {
+            lock (m_roomLock)
+            {
+                ParallelRoom curRoom = null;
+                if (m_roomMap.ContainsKey(roomName))
+                {
+                    curRoom = m_roomMap[roomName];
+                }
+                else
+                {
+                    curRoom = new ParallelRoom(roomName); ;
+                    m_roomMap[roomName] = curRoom;
+                }
+                curRoom.AddSocket(socket);
+                return curRoom;
+            }
+        }
+
+        /// <summary>
+        /// Detach given socket from the given room
+        /// </summary>
+        /// <param name="socket">socket to detach</param>
+        /// <param name="roomName">room name</param>
+        /// <returns>number of sockets left in the room</returns>
+        public int Leave(IParallelSocket socket, string roomName)
+        {
+            lock (m_roomLock)
+            {
+                if (m_roomMap.ContainsKey(roomName))
+                {
+                    int numSocketLeft = m_roomMap[roomName].DetachClient(socket);
+                    if (numSocketLeft == 0)
+                    {
+                        m_roomMap.Remove(roomName);
+                    }
+                    return numSocketLeft;
+                }
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Broadcast the given packet to all the client, connected
+        /// </summary>
+        /// <param name="data">data in byte array</param>
+        /// <param name="offset">offset in bytes</param>
+        /// <param name="dataSize">data size in bytes</param>
+        public void Broadcast(string roomName, byte[] data, int offset, int dataSize)
+        {
+            lock (m_roomLock)
+            {
+                if (m_roomMap.ContainsKey(roomName))
+                {
+                    m_roomMap[roomName].Broadcast(data, offset, dataSize);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Broadcast the given packet to all the client, connected
+        /// </summary>
+        /// <param name="data">data in byte array</param>
+        public void Broadcast(string roomName, byte[] data)
+        {
+            lock (m_roomLock)
+            {
+                if (m_roomMap.ContainsKey(roomName))
+                {
+                    m_roomMap[roomName].Broadcast(data);
+                }
+            }
         }
 
     }

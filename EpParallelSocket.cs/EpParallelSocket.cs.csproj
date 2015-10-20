@@ -48,6 +48,8 @@
     <Compile Include="ServerSide\ParallelServer.cs" />
     <Compile Include="ServerSide\ParallelServerInterface.cs" />
     <Compile Include="ServerSide\ParallelSocket.cs" />
+    <Compile Include="ServerSide\Room\ParallelRoom.cs" />
+    <Compile Include="ServerSide\Room\ParallelRoomInterface.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">

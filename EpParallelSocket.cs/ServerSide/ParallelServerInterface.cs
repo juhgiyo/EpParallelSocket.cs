@@ -50,6 +50,15 @@ namespace EpParallelSocket.cs
     public sealed class ParallelServerOps
     {
         /// <summary>
+        /// acceptor object
+        /// </summary>
+        public IParallelServerAcceptor Acceptor
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// callback object
         /// </summary>
         public IParallelServerCallback CallBackObj
@@ -111,6 +120,7 @@ namespace EpParallelSocket.cs
         /// </summary>
         public ParallelServerOps()
         {
+            Acceptor = null;
             CallBackObj = null;
             RoomCallBackObj = null;
             Port = ParallelSocketConf.DEFAULT_PORT;
@@ -121,13 +131,15 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Default constructor
         /// </summary>
+        /// <param name="acceptor">acceptor object</param>
         /// <param name="callBackObj">callback object</param>
         /// <param name="port">port</param>
         /// <param name="receiveType">receive type</param>
         /// <param name="noDelay">noDelay falg</param>
-        public ParallelServerOps(IParallelServerCallback callBackObj, String port, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite, int streamCountPerSocket = SocketCount.Infinite, IParallelRoomCallback roomCallBackObj = null)
+        public ParallelServerOps(IParallelServerAcceptor acceptor, String port, IParallelServerCallback callBackObj = null, IParallelRoomCallback roomCallBackObj = null, ReceiveType receiveType = ReceiveType.SEQUENTIAL, int socketCount = SocketCount.Infinite, int streamCountPerSocket = SocketCount.Infinite)
         {
             this.Port = port;
+            this.Acceptor = acceptor;
             this.CallBackObj = callBackObj;
             this.RoomCallBackObj = roomCallBackObj;
             this.ReceiveType = receiveType;
@@ -152,6 +164,16 @@ namespace EpParallelSocket.cs
         /// </summary>
         /// <returns>port</returns>
         String Port { get; }
+
+
+        /// <summary>
+        /// acceptor object
+        /// </summary>
+        IParallelServerAcceptor Acceptor
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// callback object
@@ -321,16 +343,27 @@ namespace EpParallelSocket.cs
         /// Accept callback
         /// </summary>
         /// <param name="server">server</param>
-        /// <param name="ipInfo">connection info</param>
-        /// <param name="streamCount">stream count for the parallel socket</param>
-        /// <returns>the socket callback interface</returns>
-        IParallelSocketCallback OnParallelServerAccept(IParallelServer server, IPInfo ipInfo, int streamCount);
+        /// <param name="socket">socket accepted</param>
+        void OnParallelServerAccepted(IParallelServer server, IParallelSocket socket);
         /// <summary>
         /// Server stopped callback
         /// </summary>
         /// <param name="server">server</param>
         void OnParallelServerStopped(IParallelServer server);
     };
+
+    public interface IParallelServerAcceptor
+    {
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="server">server</param>
+        /// <param name="ipInfo">connection info</param>
+        /// <param name="streamCount">stream count for the parallel socket</param>
+        /// <returns>true to accept otherwise false</returns>
+        bool OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount);
+        IParallelSocketCallback GetSocketCallback();
+    }
 
 
     /// <summary>

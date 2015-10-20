@@ -50,7 +50,7 @@ namespace EpParallelSocket.cs
     /// <summary>
     /// Parallel Server
     /// </summary>
-    public sealed class ParallelServer : ThreadEx, IParallelServer, INetworkServerCallback, INetworkSocketCallback
+    public sealed class ParallelServer : ThreadEx, IParallelServer,INetworkServerAcceptor, INetworkServerCallback, INetworkSocketCallback
     {
         /// <summary>
         /// port
@@ -84,6 +84,11 @@ namespace EpParallelSocket.cs
         /// callback object
         /// </summary>
         private IParallelServerCallback m_callBackObj = null;
+
+        /// <summary>
+        /// acceptor object
+        /// </summary>
+        private IParallelServerAcceptor m_acceptor = null;
 
         /// <summary>
         /// room callback object
@@ -166,10 +171,12 @@ namespace EpParallelSocket.cs
                 if (value == null)
                 {
                     m_onAccepted = delegate { };
+                    if (CallBackObj != null)
+                        m_onAccepted += CallBackObj.OnParallelServerAccepted;
                 }
                 else
                 {
-                    m_onAccepted = value;
+                    m_onAccepted = CallBackObj != null && CallBackObj.OnParallelServerAccepted != value ? CallBackObj.OnParallelServerAccepted + (value - CallBackObj.OnParallelServerAccepted) : value;
                 }
             }
         }
@@ -268,6 +275,30 @@ namespace EpParallelSocket.cs
                 }
             }
         }
+        /// <summary>
+        /// acceptor object
+        /// </summary>
+        public IParallelServerAcceptor Acceptor
+        {
+            get
+            {
+                lock (m_generalLock)
+                {
+                    return m_acceptor;
+                }
+            }
+            set
+            {
+                lock (m_generalLock)
+                {
+                    if (value == null)
+                        throw new NullReferenceException("Acceptor cannot be null!");
+                    m_acceptor = value;
+                }
+
+            }
+        }
+
         /// <summary>
         /// callback object
         /// </summary>
@@ -403,7 +434,7 @@ namespace EpParallelSocket.cs
                         status = StartStatus.FAIL_ALREADY_STARTED;
                         throw new CallbackException();
                     }
-
+                    Acceptor = m_serverOps.Acceptor;
                     CallBackObj = m_serverOps.CallBackObj;
                     RoomCallBackObj = m_serverOps.RoomCallBackObj;
                     Port = m_serverOps.Port;
@@ -425,7 +456,7 @@ namespace EpParallelSocket.cs
                     }          
 
                     m_listener = new IocpTcpServer();
-                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port, true, MaxSocketCount);
+                    ServerOps listenerOps = new ServerOps(this, m_serverOps.Port, this,null, true, MaxSocketCount);
                     m_listener.StartServer(listenerOps);
                 }
 
@@ -454,8 +485,8 @@ namespace EpParallelSocket.cs
         {
             if (ops == null)
                 ops = ParallelServerOps.defaultServerOps;
-            if (ops.CallBackObj == null)
-                throw new NullReferenceException("callBackObj is null!");
+            if (ops.Acceptor == null)
+                throw new NullReferenceException("acceptor cannot be null!");
             lock (m_generalLock)
             {
                 m_serverOps = ops;
@@ -564,6 +595,25 @@ namespace EpParallelSocket.cs
             }
         }
 
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="server">server</param>
+        /// <param name="ipInfo">connection info</param>
+        /// <returns>the socket callback interface</returns>
+        public bool OnAccept(INetworkServer server, IPInfo ipInfo)
+        {
+            return true;
+        }
+        /// <summary>
+        /// Should return the socket callback object
+        /// </summary>
+        /// <returns>the socket callback object</returns>
+        public INetworkSocketCallback GetSocketCallback()
+        {
+            return this;
+        }
+
 
         /// <summary>
         /// Server started callback
@@ -574,15 +624,16 @@ namespace EpParallelSocket.cs
         {
             OnParallelServerStarted(this, status);
         }
+
+  
         /// <summary>
         /// Accept callback
         /// </summary>
         /// <param name="server">server</param>
         /// <param name="ipInfo">connection info</param>
         /// <returns>the socket callback interface</returns>
-        public INetworkSocketCallback OnAccept(INetworkServer server, IPInfo ipInfo)
+        public void OnServerAccepted(INetworkServer server, INetworkSocket socket)
         {
-            return this;
         }
         /// <summary>
         /// Server stopped callback
@@ -633,10 +684,11 @@ namespace EpParallelSocket.cs
                                 socket.Disconnect();
                                 return;
                             }
-                            IParallelSocketCallback socketCallback = CallBackObj.OnParallelServerAccept(this, socket.IPInfo, streamCount);
-                            if (socketCallback != null)
+                            
+                            if (Acceptor.OnAccept(this, socket.IPInfo, streamCount))
                             {
                                 // Create new Parallel Socket
+                                IParallelSocketCallback socketCallback = Acceptor.GetSocketCallback();
                                 ParallelSocket parallelSocket = new ParallelSocket(guid,socket, this);
                                 parallelSocket.CallBackObj = socketCallback;
                                 parallelSocket.Start();

@@ -13,7 +13,7 @@ using System.Diagnostics;
 
 namespace EpParallelSocketServerSample
 {
-    public partial class ParallelServerSample : Form,IParallelServerCallback, IParallelSocketCallback
+    public partial class ParallelServerSample : Form,IParallelServerAcceptor, IParallelServerCallback, IParallelSocketCallback
     {
         ParallelServer m_server = new ParallelServer();
         public ParallelServerSample()
@@ -26,7 +26,7 @@ namespace EpParallelSocketServerSample
         {
             if (btnStart.Text.CompareTo("Start")==0)
             {
-                ParallelServerOps ops = new ParallelServerOps(this, tbPort.Text, ReceiveType.SEQUENTIAL);
+                ParallelServerOps ops = new ParallelServerOps(this, tbPort.Text, this,null, ReceiveType.SEQUENTIAL);
                 m_server.StartServer(ops);
             }
             else
@@ -58,7 +58,20 @@ namespace EpParallelSocketServerSample
                 btnStart.Invoke(CI,isConnected);
             }
         }
-
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="server">server</param>
+        /// <param name="ipInfo">connection info</param>
+        /// <returns>the socket callback interface</returns>
+        public bool OnAccept(IParallelServer server, IPInfo ipInfo, int streamCount)
+        {
+            return true;
+        }
+        public IParallelSocketCallback GetSocketCallback()
+        {
+            return this;
+        }
         /// <summary>
         /// Server started callback
         /// </summary>
@@ -79,9 +92,8 @@ namespace EpParallelSocketServerSample
         /// <param name="server">server</param>
         /// <param name="ipInfo">connection info</param>
         /// <returns>the socket callback interface</returns>
-        public IParallelSocketCallback OnParallelServerAccept(IParallelServer server, IPInfo ipInfo, int streamCount)
+        public void OnParallelServerAccepted(IParallelServer server, IParallelSocket socket)
         {
-            return this;
         }
         /// <summary>
         /// Server stopped callback

@@ -515,8 +515,8 @@ namespace EpParallelSocket.cs
         {
             if (ops == null)
                 ops = ParallelClientOps.defaultClientOps;
-            if (ops.CallBackObj == null)
-                throw new NullReferenceException("callBackObj is null!");
+//             if (ops.CallBackObj == null)
+//                 throw new NullReferenceException("callBackObj is null!");
             lock (m_generalLock)
             {
                 m_clientOps = ops;

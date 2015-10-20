@@ -123,7 +123,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         ///  OnAccept event
         /// </summary>
-        OnParallelServerAcceptDelegate m_onAccept = delegate { };
+        OnParallelServerAcceptedDelegate m_onAccepted = delegate { };
         /// <summary>
         /// OnserverStopped event
         /// </summary>
@@ -155,21 +155,21 @@ namespace EpParallelSocket.cs
         /// <summary>
         ///  OnAccept event
         /// </summary>
-        public OnParallelServerAcceptDelegate OnParallelServerAccept
+        public OnParallelServerAcceptedDelegate OnParallelServerAccepted
         {
             get
             {
-                return m_onAccept;
+                return m_onAccepted;
             }
             set
             {
                 if (value == null)
                 {
-                    m_onAccept = delegate { };
+                    m_onAccepted = delegate { };
                 }
                 else
                 {
-                    m_onAccept = value;
+                    m_onAccepted = value;
                 }
             }
         }
@@ -641,7 +641,7 @@ namespace EpParallelSocket.cs
                                 parallelSocket.CallBackObj = socketCallback;
                                 parallelSocket.Start();
                                 m_socketMap[guid] = parallelSocket;
-                                OnParallelServerAccept(this, socket.IPInfo, streamCount);
+                                OnParallelServerAccepted(this, parallelSocket);
                             }
                             else
                             {

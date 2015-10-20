@@ -287,7 +287,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         ///  OnAccept event
         /// </summary>
-        OnParallelServerAcceptDelegate OnParallelServerAccept
+        OnParallelServerAcceptedDelegate OnParallelServerAccepted
         {
             get;
             set;
@@ -303,7 +303,7 @@ namespace EpParallelSocket.cs
     }
 
     public delegate void OnParallelServerStartedDelegate(IParallelServer server, StartStatus status);
-    public delegate void OnParallelServerAcceptDelegate(IParallelServer server, IPInfo ipInfo, int streamCount);
+    public delegate void OnParallelServerAcceptedDelegate(IParallelServer server, IParallelSocket socket);
     public delegate void OnParallelServerStoppedDelegate(IParallelServer server);
 
     /// <summary>

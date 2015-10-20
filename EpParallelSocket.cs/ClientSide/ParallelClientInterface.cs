@@ -1,7 +1,7 @@
 ﻿/*! 
 @file ParallelClientInterface.cs
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
-		<http://github.com/juhgiyo/epparallelclient.cs>
+		<http://github.com/juhgiyo/epparallelsocket.cs>
 @date October 13, 2015
 @brief Parallel Client Interface
 @version 2.0
@@ -151,6 +151,7 @@ namespace EpParallelSocket.cs
         IParallelClientCallback CallBackObj
         {
             get;
+            set;
         }
         /// <summary>
         /// hostname

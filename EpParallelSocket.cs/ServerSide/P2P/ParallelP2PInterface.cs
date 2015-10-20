@@ -1,9 +1,9 @@
 ﻿/*! 
-@file ParallelRoomInterface.cs
+@file ParallelP2PInterface.cs
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
 		<http://github.com/juhgiyo/epparallelsocket.cs>
 @date October 13, 2015
-@brief Parallel Room interface
+@brief Parallel P2P interface
 @version 2.0
 
 @section LICENSE
@@ -32,7 +32,7 @@ THE SOFTWARE.
 
 @section DESCRIPTION
 
-A ParallelRoom Interface.
+A ParallelP2P Interface.
 
 */
 using System;
@@ -43,34 +43,51 @@ using System.Threading.Tasks;
 
 namespace EpParallelSocket.cs
 {
-    public interface IParallelRoom
+    /// <summary>
+    /// Parallel P2P interface
+    /// </summary>
+    public interface IParallelP2P
     {
-        string RoomName
+        /// <summary>
+        /// flag whether P2P is paired
+        /// </summary>
+        bool Paired
         {
             get;
         }
-
         /// <summary>
-        /// Return the client socket list
+        /// callback object
         /// </summary>
-        /// <returns>the client socket list</returns>
-        List<IParallelSocket> GetSocketList();
-
-
+        IParallelP2PCallback CallBackObj
+        {
+            get;
+            set;
+        }
         /// <summary>
-        /// Broadcast the given packet to all the client, connected
+        /// Connect given two socket as p2p
         /// </summary>
-        /// <param name="data">data in byte array</param>
-        /// <param name="offset">offset in bytes</param>
-        /// <param name="dataSize">data size in bytes</param>
-        void Broadcast(byte[] data, int offset, int dataSize);
-
-
+        /// <param name="socket1">first socket</param>
+        /// <param name="socket2">second socket</param>
+        /// <param name="callback">callback object</param>
+        /// <returns>true if paired otherwise false</returns>
+        bool ConnectPair(IParallelSocket socket1, IParallelSocket socket2, IParallelP2PCallback callback);
         /// <summary>
-        /// Broadcast the given packet to all the client, connected
+        /// Detach pair
         /// </summary>
-        /// <param name="data">data in byte array</param>
-        void Broadcast(byte[] data);
+        void DetachPair();
+    }
 
+    /// <summary>
+    /// P2P callback interface
+    /// </summary>
+    public interface IParallelP2PCallback
+    {
+        /// <summary>
+        /// Called when p2p is detached
+        /// </summary>
+        /// <param name="p2p">p2p instance</param>
+        /// <param name="socket1">first socket</param>
+        /// <param name="socket2">second socket</param>
+        void OnDetached(IParallelP2P p2p, IParallelSocket socket1, IParallelSocket socket2);
     }
 }

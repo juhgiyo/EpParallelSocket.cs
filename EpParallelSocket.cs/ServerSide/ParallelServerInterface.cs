@@ -1,7 +1,7 @@
 ﻿/*! 
 @file ParallelServerInterface.cs
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
-		<http://github.com/juhgiyo/epparallelclient.cs>
+		<http://github.com/juhgiyo/epparallelsocket.cs>
 @date October 13, 2015
 @brief Parallel Server Interface
 @version 2.0
@@ -147,6 +147,7 @@ namespace EpParallelSocket.cs
         IParallelServerCallback CallBackObj
         {
             get;
+            set;
         }
 
         /// <summary>
@@ -342,7 +343,7 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// callback object property
         /// </summary>
-        IParallelSocketCallback CallBackObj { get; }
+        IParallelSocketCallback CallBackObj { get; set; }
 
 
         /// <summary>

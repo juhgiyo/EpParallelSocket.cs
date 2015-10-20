@@ -1,7 +1,7 @@
 ﻿/*! 
 @file ParallelPacket.cs
 @author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
-		<http://github.com/juhgiyo/epparallelclient.cs>
+		<http://github.com/juhgiyo/epparallelsocket.cs>
 @date October 13, 2015
 @brief Parallel Packet Interface
 @version 2.0

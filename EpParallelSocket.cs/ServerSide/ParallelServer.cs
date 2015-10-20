@@ -1,4 +1,41 @@
-﻿using EpLibrary.cs;
+﻿/*! 
+@file ParallelServer.cs
+@author Woong Gyu La a.k.a Chris. <juhgiyo@gmail.com>
+		<http://github.com/juhgiyo/epparallelsocket.cs>
+@date October 13, 2015
+@brief Parallel Server class
+@version 2.0
+
+@section LICENSE
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Woong Gyu La <juhgiyo@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+@section DESCRIPTION
+
+A ParallelServer Class.
+
+*/
+using EpLibrary.cs;
 using EpServerEngine.cs;
 using System;
 using System.Collections.Generic;
@@ -158,7 +195,7 @@ namespace EpParallelSocket.cs
                     return m_callBackObj;
                 }
             }
-            private set
+            set
             {
                 lock (m_generalLock)
                 {
@@ -277,7 +314,8 @@ namespace EpParallelSocket.cs
             }
             catch (CallbackException)
             {
-                CallBackObj.OnServerStarted(this, status);
+                if(CallBackObj!=null)
+                    CallBackObj.OnServerStarted(this, status);
                 return;
             }
             catch (Exception ex)
@@ -286,7 +324,8 @@ namespace EpParallelSocket.cs
                 if (m_listener != null)
                     m_listener.StopServer();
                 m_listener = null;
-                CallBackObj.OnServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
+                if (CallBackObj != null)
+                    CallBackObj.OnServerStarted(this, StartStatus.FAIL_SOCKET_ERROR);
                 return;
             }
         }
@@ -417,7 +456,8 @@ namespace EpParallelSocket.cs
         /// <param name="status">start status</param>
         public void OnServerStarted(INetworkServer server, StartStatus status)
         {
-            CallBackObj.OnServerStarted(this, status);
+            if (CallBackObj != null)
+                CallBackObj.OnServerStarted(this, status);
         }
         /// <summary>
         /// Accept callback
@@ -435,7 +475,8 @@ namespace EpParallelSocket.cs
         /// <param name="server">server</param>
         public void OnServerStopped(INetworkServer server)
         {
-            CallBackObj.OnServerStopped(this);
+            if (CallBackObj != null)
+                CallBackObj.OnServerStopped(this);
         }
 
 
@@ -473,6 +514,11 @@ namespace EpParallelSocket.cs
                         }
                         else
                         {
+                            if (CallBackObj == null)
+                            {
+                                socket.Disconnect();
+                                return;
+                            }
                             IParallelSocketCallback socketCallback = CallBackObj.OnAccept(this, socket.IPInfo, streamCount);
                             if (socketCallback != null)
                             {

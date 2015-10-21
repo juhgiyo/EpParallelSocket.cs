@@ -862,7 +862,7 @@ namespace EpParallelSocket.cs
             {
                 if (m_roomMap.ContainsKey(roomName))
                 {
-                    m_roomMap[roomName].Broadcast(data, offset, dataSize);
+                    m_roomMap[roomName].Broadcast(this, data, offset, dataSize);
                 }
             }
         }
@@ -878,7 +878,7 @@ namespace EpParallelSocket.cs
             {
                 if (m_roomMap.ContainsKey(roomName))
                 {
-                    m_roomMap[roomName].Broadcast(data);
+                    m_roomMap[roomName].Broadcast(this, data);
                 }
             }
         }

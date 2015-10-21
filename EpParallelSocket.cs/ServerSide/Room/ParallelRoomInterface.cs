@@ -131,7 +131,7 @@ namespace EpParallelSocket.cs
     public delegate void OnParallelRoomCreatedDelegate(IParallelRoom room);
     public delegate void OnParallelRoomJoinDelegate(IParallelRoom room, IParallelSocket socket);
     public delegate void OnParallelRoomLeaveDelegate(IParallelRoom room, IParallelSocket socket);
-    public delegate void OnParallelRoomBroadcastDelegate(IParallelRoom room, byte[] data, int offset, int dataSize);
+    public delegate void OnParallelRoomBroadcastDelegate(IParallelRoom room, IParallelSocket sender, byte[] data, int offset, int dataSize);
     public delegate void OnParallelRoomDestroyDelegate(IParallelRoom room);
 
     public interface IParallelRoomCallback
@@ -163,7 +163,7 @@ namespace EpParallelSocket.cs
         /// <param name="data">data</param>
         /// <param name="offset">offset of data to start</param>
         /// <param name="dataSize">datasize</param>
-        void OnParallelRoomBroadcast(IParallelRoom room, byte[] data, int offset, int dataSize);
+        void OnParallelRoomBroadcast(IParallelRoom room, IParallelSocket sender, byte[] data, int offset, int dataSize);
 
 
         /// <summary>

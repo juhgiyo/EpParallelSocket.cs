@@ -336,23 +336,46 @@ namespace EpParallelSocket.cs
         /// <summary>
         /// Broadcast the given packet to all the client, connected
         /// </summary>
+        /// <param name="sender">sender of the broadcast</param>
+        /// <param name="data">data in byte array</param>
+        /// <param name="offset">offset in bytes</param>
+        /// <param name="dataSize">data size in bytes</param>
+        public void Broadcast(IParallelSocket sender, byte[] data, int offset, int dataSize)
+        {
+            List<IParallelSocket> list = GetSocketList();
+            foreach (IParallelSocket socket in list)
+            {
+                if(socket!=sender)
+                    socket.Send(data, offset, dataSize);
+            }
+
+            Task t = new Task(delegate()
+            {
+                OnParallelRoomBroadcast(this,sender, data, offset, dataSize);
+            });
+            t.Start();
+
+        }
+
+        /// <summary>
+        /// Broadcast the given packet to all the client, connected
+        /// </summary>
+        /// <param name="sender">sender of the broadcast</param>
+        /// <param name="data">data in byte array</param>
+        public void Broadcast(IParallelSocket sender, byte[] data)
+        {
+            Broadcast(sender, data, 0, data.Count());
+        }
+
+        /// <summary>
+        /// Broadcast the given packet to all the client, connected
+        /// </summary>
         /// <param name="data">data in byte array</param>
         /// <param name="offset">offset in bytes</param>
         /// <param name="dataSize">data size in bytes</param>
         public void Broadcast(byte[] data, int offset, int dataSize)
         {
-            List<IParallelSocket> list = GetSocketList();
-            foreach (IParallelSocket socket in list)
-            {
-                socket.Send(data,offset,dataSize);
-            }
-            
-            Task t = new Task(delegate()
-            {
-                OnParallelRoomBroadcast(this, data, offset, dataSize);
-            });
-            t.Start();
-            
+            Broadcast(null,data, 0, data.Count());
         }
 
         /// <summary>

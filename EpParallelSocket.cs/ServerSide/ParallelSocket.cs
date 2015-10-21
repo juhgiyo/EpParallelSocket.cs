@@ -479,7 +479,7 @@ namespace EpParallelSocket.cs
                             m_pendingPacketSet.Add(sendPacket);
                             INetworkSocket client = m_pendingClientSet.First();
                             m_pendingClientSet.Remove(client);
-                            client.Send(sendPacket.GetPacketRaw());
+                            client.Send(sendPacket.PacketRaw);
                             continue;
                         }
                         else if (m_packetQueue.Count > 0)
@@ -488,7 +488,7 @@ namespace EpParallelSocket.cs
                             m_pendingPacketSet.Add(sendPacket);
                             INetworkSocket client = m_pendingClientSet.First();
                             m_pendingClientSet.Remove(client);
-                            client.Send(sendPacket.GetPacketRaw());
+                            client.Send(sendPacket.PacketRaw);
                             continue;
                         }
                     }
@@ -626,7 +626,7 @@ namespace EpParallelSocket.cs
             CurSocketCount++;
             ((IocpTcpSocket)socket).CallBackObj = this;
             ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.READY, null);
-            socket.Send(sendPacket.GetPacketRaw());
+            socket.Send(sendPacket.PacketRaw);
             lock (m_sendLock)
             {
                 m_pendingClientSet.Add(socket);
@@ -654,7 +654,7 @@ namespace EpParallelSocket.cs
         public void OnReceived(INetworkSocket socket, Packet receivedPacket)
         {
             ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
-            switch (receivedParallelPacket.GetPacketType())
+            switch (receivedParallelPacket.PacketType)
             {
                 case ParallelPacketType.DATA:
                     if (ReceiveType == ReceiveType.BURST)
@@ -666,11 +666,11 @@ namespace EpParallelSocket.cs
                         lock (m_receiveLock)
                         {
                             m_receivedQueue.Enqueue(receivedParallelPacket);
-                            while (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().GetPacketID())
+                            while (!m_receivedQueue.IsEmpty() && m_curReceivedPacketId + 1 == m_receivedQueue.Peek().PacketID)
                             {
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
-                                if (curPacket.GetPacketID() != -1)
-                                    m_curReceivedPacketId = curPacket.GetPacketID();
+                                if (curPacket.PacketID != -1)
+                                    m_curReceivedPacketId = curPacket.PacketID;
                                 OnParallelSocketReceived(this, curPacket);
                             }
                         }
@@ -691,7 +691,7 @@ namespace EpParallelSocket.cs
         public void OnSent(INetworkSocket socket, SendStatus status, Packet sentPacket)
         {
             ParallelPacket sentParallelPacket = ParallelPacket.FromPacket(sentPacket);
-            if (sentParallelPacket.GetPacketType() == ParallelPacketType.DATA)
+            if (sentParallelPacket.PacketType == ParallelPacketType.DATA)
             {
                 lock (m_sendLock)
                 {

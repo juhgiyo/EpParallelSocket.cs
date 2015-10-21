@@ -653,7 +653,7 @@ namespace EpParallelSocket.cs
         {
             // Request Identity of new connected socket
             ParallelPacket sendPacket = new ParallelPacket(-1, ParallelPacketType.IDENTITY_REQUEST,null);
-            socket.Send(sendPacket.GetPacketRaw());
+            socket.Send(sendPacket.PacketRaw);
         }
 
         /// <summary>
@@ -664,11 +664,11 @@ namespace EpParallelSocket.cs
         public void OnReceived(INetworkSocket socket, Packet receivedPacket)
         {
             ParallelPacket receivedParallelPacket = new ParallelPacket(receivedPacket);
-            switch (receivedParallelPacket.GetPacketType())
+            switch (receivedParallelPacket.PacketType)
             {
                 case ParallelPacketType.IDENTITY_RESPONSE:
-                    PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(receivedParallelPacket.GetPacketRaw(),receivedParallelPacket.GetHeaderSize(),receivedParallelPacket.GetDataByteSize());
-                    IdentityResponse response = serializer.GetPacket();
+                    PacketSerializer<IdentityResponse> serializer = new PacketSerializer<IdentityResponse>(receivedParallelPacket.PacketRaw,receivedParallelPacket.HeaderSize,receivedParallelPacket.DataByteSize);
+                    IdentityResponse response = serializer.ClonePacketObj();
                     Guid guid = response.m_guid;
                     int streamCount = response.m_streamCount;
                     lock (m_listLock)

@@ -76,8 +76,8 @@ namespace EpParallelSocketClientSample
         /// <param name="receivedPacket">received packet</param>
         public void OnParallelClientReceived(IParallelClient client, ParallelPacket receivedPacket)
         {
-            string recvString=ASCIIEncoding.ASCII.GetString(receivedPacket.GetData().ToArray());
-            Debug.Print("Received [" + receivedPacket.GetPacketID() + "] " + recvString);
+            string recvString=ASCIIEncoding.ASCII.GetString(receivedPacket.CloneData());
+            Debug.Print("Received [" + receivedPacket.PacketID + "] " + recvString);
         }
 
         /// <summary>
@@ -88,8 +88,8 @@ namespace EpParallelSocketClientSample
         /// <param name="sentPacket">sent packet</param>
         public void OnParallelClientSent(IParallelClient client, SendStatus status, ParallelPacket sentPacket)
         {
-            string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.GetData().ToArray());
-            Debug.Print("Sent [" + sentPacket.GetPacketID() + "] " + sentString);
+            string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.CloneData());
+            Debug.Print("Sent [" + sentPacket.PacketID + "] " + sentString);
         }
 
         /// <summary>

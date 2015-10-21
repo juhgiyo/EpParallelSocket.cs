@@ -50,7 +50,7 @@ namespace EpParallelSocket.cs
     /// <summary>
     /// Parallel Packet class
     /// </summary>
-    public sealed class ParallelPacket : IComparable<ParallelPacket>, IEquatable<ParallelPacket>
+    public sealed class ParallelPacket :IComparable<ParallelPacket>, IEquatable<ParallelPacket>
     {
         /// <summary>
         /// packet
@@ -159,61 +159,90 @@ namespace EpParallelSocket.cs
         /// Return the packet id
         /// </summary>
         /// <returns>the packet id</returns>
-        public long GetPacketID()
+        public long PacketID
         {
-            return m_packetId;
+            get
+            {
+                return m_packetId;
+            }
         }
         /// <summary>
         /// Return the packet type
         /// </summary>
         /// <returns>the packet type</returns>
-        public ParallelPacketType GetPacketType()
+        public ParallelPacketType PacketType
         {
-            return m_packetType;
+            get
+            {
+                return m_packetType;
+            }
         }
 
         /// <summary>
         /// Return the packet header size
         /// </summary>
         /// <returns>the packet header size</returns>
-        public int GetHeaderSize()
+        public int HeaderSize
         {
-            return HEADER_SIZE;
+            get
+            {
+                return HEADER_SIZE;
+            }
         }
         /// <summary>
         /// Return the size of packet in byte
         /// </summary>
         /// <returns>the size of packet in byte</returns>
-        public int GetPacketByteSize()
+        public int PacketByteSize
         {
-            return m_packet.Count();
+            get
+            {
+                return m_packet.Count();
+            }
         }
 
         /// <summary>
         /// Return the size of data in byte
         /// </summary>
         /// <returns>the size of data in byte</returns>
-        public int GetDataByteSize()
+        public int DataByteSize
         {
-            return m_packet.Count() - HEADER_SIZE;
+            get
+            {
+                return m_packet.Count() - HEADER_SIZE;
+            }
         }
 
         /// <summary>
         /// Return the actual packet
         /// </summary>
         /// <returns>the actual packet</returns>
-        public byte[] GetPacketRaw()
+        public byte[] PacketRaw
         {
-            return m_packet;
+            get
+            {
+                return m_packet;
+            }
         }
 
         /// <summary>
         /// Return the actual packet
         /// </summary>
         /// <returns>the actual packet</returns>
-        public IEnumerable<byte> GetData()
+        public IEnumerable<byte> Data
         {
-            return m_packet.Skip(HEADER_SIZE);
+            get
+            {
+                return m_packet.Skip(HEADER_SIZE);
+            }
+        }
+        /// <summary>
+        /// Return the cloned data from the packet
+        /// </summary>
+        /// <returns>the cloned data</returns>
+        public byte[] CloneData()
+        {
+            return m_packet.Skip(HEADER_SIZE).ToArray();
         }
 
 

@@ -121,9 +121,10 @@ namespace EpParallelSocketServerSample
         /// <param name="receivedPacket">received packet</param>
         public void OnParallelSocketReceived(IParallelSocket socket, ParallelPacket receivedPacket)
         {
-             string recvString=ASCIIEncoding.ASCII.GetString(receivedPacket.GetData().ToArray());
-             Debug.Print("Received [" + receivedPacket.GetPacketID() + "] " + recvString);
-            socket.Send(receivedPacket.GetData().ToArray());
+            byte[] receivedData = receivedPacket.CloneData();
+            string recvString = ASCIIEncoding.ASCII.GetString(receivedData);
+             Debug.Print("Received [" + receivedPacket.PacketID + "] " + recvString);
+             socket.Send(receivedData);
         }
 
         /// <summary>
@@ -134,8 +135,8 @@ namespace EpParallelSocketServerSample
         /// <param name="sentPacket">sent packet</param>
         public void OnParallelSocketSent(IParallelSocket socket, SendStatus status, ParallelPacket sentPacket)
         {
-            string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.GetData().ToArray());
-            Debug.Print("Sent [" + sentPacket.GetPacketID() + "] " + sentString);
+            string sentString = ASCIIEncoding.ASCII.GetString(sentPacket.CloneData());
+            Debug.Print("Sent [" + sentPacket.PacketID + "] " + sentString);
         }
 
         /// <summary>

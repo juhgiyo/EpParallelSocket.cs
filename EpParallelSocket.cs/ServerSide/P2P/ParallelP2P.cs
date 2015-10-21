@@ -198,11 +198,11 @@ namespace EpParallelSocket.cs
             {
                 if (socket == m_socket1)
                 {
-                    m_socket2.Send(receivedPacket.GetPacketRaw(), receivedPacket.GetHeaderSize(), receivedPacket.GetDataByteSize());
+                    m_socket2.Send(receivedPacket.PacketRaw, receivedPacket.HeaderSize, receivedPacket.DataByteSize);
                 }
                 else
                 {
-                    m_socket1.Send(receivedPacket.GetPacketRaw(), receivedPacket.GetHeaderSize(), receivedPacket.GetDataByteSize());
+                    m_socket1.Send(receivedPacket.PacketRaw, receivedPacket.HeaderSize, receivedPacket.DataByteSize);
                 }
             }
         }

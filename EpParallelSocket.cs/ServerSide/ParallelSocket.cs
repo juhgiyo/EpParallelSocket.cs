@@ -588,13 +588,7 @@ namespace EpParallelSocket.cs
         /// <param name="dataSize">data size in bytes</param>
         public void Broadcast(byte[] data, int offset, int dataSize)
         {
-            List<ParallelSocket> socketList = Server.GetClientSocketList();
-
-            foreach (ParallelSocket socket in socketList)
-            {
-                if (socket != this)
-                    socket.Send(data, offset, dataSize);
-            }
+            ((ParallelServer)Server).Broadcast(this, data, offset, dataSize);
         }
 
         /// <summary>
@@ -603,13 +597,7 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         public void Broadcast(byte[] data)
         {
-            List<ParallelSocket> socketList = Server.GetClientSocketList();
-
-            foreach (ParallelSocket socket in socketList)
-            {
-                if (socket != this)
-                    socket.Send(data);
-            }
+            ((ParallelServer)Server).Broadcast(this, data);
         }
 
         public void AddSocket(INetworkSocket socket)
@@ -856,7 +844,7 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         /// <param name="offset">offset in bytes</param>
         /// <param name="dataSize">data size in bytes</param>
-        public void Broadcast(string roomName, byte[] data, int offset, int dataSize)
+        public void BroadcastToRoom(string roomName, byte[] data, int offset, int dataSize)
         {
             lock (m_roomLock)
             {
@@ -872,7 +860,7 @@ namespace EpParallelSocket.cs
         /// Broadcast the given packet to all the client, connected
         /// </summary>
         /// <param name="data">data in byte array</param>
-        public void Broadcast(string roomName, byte[] data)
+        public void BroadcastToRoom(string roomName, byte[] data)
         {
             lock (m_roomLock)
             {

@@ -288,14 +288,14 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         /// <param name="offset">offset in bytes</param>
         /// <param name="dataSize">data size in bytes</param>
-        void Broadcast(string roomName, byte[] data, int offset, int dataSize);
+        void BroadcastToRoom(string roomName, byte[] data, int offset, int dataSize);
 
 
         /// <summary>
         /// Broadcast the given packet to all the client, connected
         /// </summary>
         /// <param name="data">data in byte array</param>
-        void Broadcast(string roomName, byte[] data);
+        void BroadcastToRoom(string roomName, byte[] data);
 
 
         /// <summary>
@@ -514,14 +514,14 @@ namespace EpParallelSocket.cs
         /// <param name="data">data in byte array</param>
         /// <param name="offset">offset in bytes</param>
         /// <param name="dataSize">data size in bytes</param>
-        void Broadcast(string roomName, byte[] data, int offset, int dataSize);
+        void BroadcastToRoom(string roomName, byte[] data, int offset, int dataSize);
 
 
         /// <summary>
         /// Broadcast the given packet to all the client, connected
         /// </summary>
         /// <param name="data">data in byte array</param>
-        void Broadcast(string roomName, byte[] data);
+        void BroadcastToRoom(string roomName, byte[] data);
     }
 
 

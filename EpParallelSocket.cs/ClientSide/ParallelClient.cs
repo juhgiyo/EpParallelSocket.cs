@@ -693,14 +693,11 @@ namespace EpParallelSocket.cs
             lock (m_generalLock)
             {
                 long retSequence = m_curPacketSequence;
-                try
+                if (m_curPacketSequence == long.MaxValue)
                 {
-                    m_curPacketSequence++;
+                    m_curPacketSequence = -1;
                 }
-                catch (Exception)
-                {
-                    m_curPacketSequence = 0;
-                }
+                m_curPacketSequence++;
                 return retSequence;
             }
         }
@@ -806,6 +803,10 @@ namespace EpParallelSocket.cs
                             {
                                 ParallelPacket curPacket = m_receivedQueue.Dequeue();
                                 m_curReceivedPacketId = curPacket.PacketID;
+                                if (m_curReceivedPacketId == long.MaxValue)
+                                {
+                                    m_curReceivedPacketId = -1;
+                                }
                                 OnParallelClientReceived(this, curPacket);
                             }
                         }

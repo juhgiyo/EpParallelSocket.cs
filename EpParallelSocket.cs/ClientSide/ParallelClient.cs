@@ -295,8 +295,7 @@ namespace EpParallelSocket.cs
 
         ~ParallelClient()
         {
-            if (IsConnectionAlive)
-                Disconnect();
+            Dispose(false);
         }
         /// <summary>
         /// Return the hostname
@@ -918,6 +917,9 @@ namespace EpParallelSocket.cs
         {
             if (m_disposed)
                 return;
+
+            if (IsConnectionAlive)
+                Disconnect();
 
             if (disposing)
             {

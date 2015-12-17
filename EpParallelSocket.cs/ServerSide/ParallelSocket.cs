@@ -294,8 +294,7 @@ namespace EpParallelSocket.cs
 
         ~ParallelSocket()
         {
-            if (IsConnectionAlive)
-                Disconnect();
+            Dispose(false);
         }
 
         /// <summary>
@@ -886,6 +885,9 @@ namespace EpParallelSocket.cs
         {
             if (m_disposed)
                 return;
+
+            if (IsConnectionAlive)
+                Disconnect();
 
             if (disposing)
             {

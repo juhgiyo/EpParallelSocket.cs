@@ -98,7 +98,7 @@ namespace EpParallelSocket.cs
             m_guid=guid;
             m_streamCount = streamCount;
         }
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             // Use the AddValue method to specify serialized values.
             info.AddValue("guid", m_guid, typeof(Guid));
@@ -106,7 +106,7 @@ namespace EpParallelSocket.cs
         }
 
         // The special constructor is used to deserialize values. 
-        public IdentityResponse(SerializationInfo info, StreamingContext context)
+        protected IdentityResponse(SerializationInfo info, StreamingContext context)
         {
             // Reset the property value using the GetValue method.
             m_guid = (Guid)info.GetValue("guid", typeof(Guid));

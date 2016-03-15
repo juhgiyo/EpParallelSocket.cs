@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpParallelSocket.cs", "EpParallelSocket.cs.csproj", "{167FCDDB-E191-4362-A07A-9266B0FF0619}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpLibrary.cs", "..\..\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj", "{166162DF-96C8-4034-AE61-E25B2380DD9A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpLibrary.cs", "..\EpServerEngine.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj", "{166162DF-96C8-4034-AE61-E25B2380DD9A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpServerEngine.cs", "..\..\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj", "{63739890-8C4A-43A9-A33E-E6172498EF0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpServerEngine.cs", "..\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj", "{63739890-8C4A-43A9-A33E-E6172498EF0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

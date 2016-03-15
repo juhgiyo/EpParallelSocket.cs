@@ -54,11 +54,11 @@
     <Compile Include="ServerSide\Room\ParallelRoomInterface.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">
+    <ProjectReference Include="..\EpServerEngine.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs\EpLibrary.cs.csproj">
       <Project>{166162df-96c8-4034-ae61-e25b2380dd9a}</Project>
       <Name>EpLibrary.cs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj">
+    <ProjectReference Include="..\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs\EpServerEngine.cs.csproj">
       <Project>{63739890-8c4a-43a9-a33e-e6172498ef0f}</Project>
       <Name>EpServerEngine.cs</Name>
     </ProjectReference>
